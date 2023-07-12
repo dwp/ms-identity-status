@@ -1,0 +1,31 @@
+version: "2.1"
+
+services:
+
+  localstack:
+    image: localstack/localstack-full:1.0.1@sha256:6753b5e666247d984f6e57dbe1781e757f175a0c905da0dc9a62b49c443f4ecf
+    environment:
+      - AWS_ACCESS_KEY_ID=dummyaccess
+      - AWS_SECRET_ACCESS_KEY=dummysecret
+      - AWS_DEFAULT_REGION=eu-west-2
+      - HOSTNAME_EXTERNAL=localstack
+      - SERVICES=sns,sqs,kms
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:4566/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./localstack:/docker-entrypoint-initaws.d
+
+  mongo:
+    image: mongo:5.0@sha256:82302b06360729842acd27ab8a91c90e244f17e464fcfd366b7427af652c5559
+    expose:
+      - 27017
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: mongo --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10

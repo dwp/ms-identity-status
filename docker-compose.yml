@@ -1,0 +1,112 @@
+version: "2.1"
+
+services:
+
+  localstack:
+    image: localstack/localstack-full:1.0.1@sha256:b17f45c1cf5ad5e55bb5c53f0c3af31c440a4116a4b3d788bc3cb0a415f59d1a
+    environment:
+      AWS_DEFAULT_REGION: eu-west-2
+      SERVICES: sns, sqs, kms
+      HOSTNAME_EXTERNAL: localstack
+    volumes:
+      - ./config/localstack:/docker-entrypoint-initaws.d
+    healthcheck:
+      test: [ "CMD", "curl", "http://localhost:4566" ]
+    ports:
+      - "4566:4566"
+
+  mongo:
+    image: mongo:5.0@sha256:c33f652202460f60a6b9bddd5c9086e134bff2ff025077e5db817de55a410daf
+    expose:
+      - 27017
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: mongo --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  wm-application-manager:
+    image: ${MOCK_IMAGE}
+    ports:
+      - "9970:8080"
+
+  ms-identity-status:
+    image: ${APP_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=dummyaccess
+      - AWS_SECRET_ACCESS_KEY=dummysecret
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENCRYPTION_KMS_OVERRIDE=http://localstack:4566
+      - AWS_ENCRYPTION_MESSAGE_DATA_KEY_ID=alias/test_event_request_id
+      - AWS_ENCRYPTION_KMS_KEY_CACHE=true
+      - AWS_ENCRYPTION_REGION=eu-west-2
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
+      - SPRING_DATA_MONGODB_DATABASE=identity
+      - UK_GOV_DWP_HEALTH_INTEGRATION_OUTBOUND_TOPIC_EXCHANGE=pip_identity_event_nino
+      - UK_GOV_DWP_HEALTH_INTEGRATION_SNS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - UK_GOV_DWP_HEALTH_INTEGRATION_SQS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - UK_GOV_DWP_HEALTH_INBOUND_QUEUE_NAME_IDENTITY_RESPONSE=pip_idv_outcome
+      - UK_GOV_DWP_HEALTH_INBOUND_TOPIC=pip_identity_event_nino
+      - UK_GOV_DWP_HEALTH_INBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_inbound_routing
+      - UK_GOV_DWP_HEALTH_OUTBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_outbound_routing
+      - UK_GOV_DWP_HEALTH_OUTBOUND_QUEUE_NAME_IDENTITY_RESPONSE=update_pipcs_idv_queue
+      - UK_GOV_DWP_HEALTH_OUTBOUND_TOPIC=update_pipcs_idv_topic
+      - FEATURE_ENCRYPTION_MESSAGING_ENABLED=false
+      - APPLICATION_MANAGER_BASE_URL=http://wm-application-manager:8080
+    depends_on:
+      localstack:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      wm-application-manager:
+        condition: service_started
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
+      - "5009:5009"
+    entrypoint:
+      - java
+      - -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009
+      - -jar
+      - /ms-identity-status.jar
+
+  api-tests:
+    container_name: api-test
+    image: '${MAVEN_IMAGE}'
+    entrypoint: /bin/bash -c
+    command:
+      - |
+        until [ `curl -s -o /dev/null -w "%{http_code}" http://ms-identity-status:8080/actuator/health` = "200" ]; do echo "service not available, sleeping 10."; sleep 10; done
+        sleep 30
+        mvn ${MVN_OPTS} verify -Papi-component-tests
+    working_dir: /usr/src
+    environment:
+      AWS_ACCESS_KEY: aws-access-key
+      AWS_SECRET_KEY: aws-secret-key
+      AWS_ENDPOINT_OVERRIDE: http://localstack:4566
+      HOST: http://ms-identity-status
+      PORT: 8080
+      MONGODB_HOST: mongo
+      MONGO_PORT: 2701
+      AWS_REGION: eu-west-2
+      REQUEST_TOPIC_ARN: arn:aws:sns:eu-west-2:000000000000:pip_identity_event_nino
+      REQUEST_ROUTING_KEY: pip_identity_inbound_routing
+      RESPONSE_ROUTING_KEY: pip_identity_outbound_routing
+      REQUEST_QUEUE_URL: http://localstack:4566/000000000000/pip_idv_outcome
+      DEAD_LETTER_QUEUE_URL: http://localstack:4566/000000000000/pip_idv_outcome_dlq
+      RESPONSE_TOPIC_ARN: arn:aws:sns:eu-west-2:000000000000:update_pipcs_idv_topic
+      RESPONSE_QUEUE_URL: http://localstack:4566/000000000000/update_pipcs_idv_queue
+
+    volumes:
+      - .:/usr/src
+      - ${MVN_M2}:/root/.m2
+      - ${MVN_SETTINGS_FILE_SAAS}:/root/.m2/settings.xml
+      - ./target/test/reports:/usr/src/target/test-reports
+
+

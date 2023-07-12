@@ -1,0 +1,29 @@
+########################################################################################
+###   Entrypoint yaml for the CI pipelines - use this to define:                     ###
+###     - pipeline includes for all config and jobs                                  ###
+########################################################################################
+
+include:
+  # config
+  - local: "/gitlab-ci/config/fragments.yml"
+  - local: "/gitlab-ci/config/stages.yml"
+  - local: "/gitlab-ci/config/constants.yml"
+  - local: "/gitlab-ci/config/pipeline.yml"
+  # standards
+  - local: "/gitlab-ci/jobs/pipeline-compliance.yml"
+  - local: "/gitlab-ci/jobs/code-quality.yml"
+  # maven
+  - local: "/gitlab-ci/jobs/java-maven.yml"
+  # analysis
+  - local: "/gitlab-ci/jobs/code-analysis.yml"
+  # docker
+  - local: "/gitlab-ci/jobs/docker.yml"
+  # docs
+  - local: "/gitlab-ci/jobs/documentation.yml"
+  # schedules
+  - local: "/gitlab-ci/jobs/schedules.yml"
+  # release
+  - local: "/gitlab-ci/jobs/version.yml"
+
+variables:
+  SERVICE_NAME: "MS Identity Status"

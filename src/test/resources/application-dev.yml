@@ -1,0 +1,46 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: identity
+
+uk:
+  gov:
+    dwp:
+      health:
+        event:
+          cryptoConfig:
+            cacheKmsDataKeys: true
+            dataKeyId: alias/example_kms
+            kmsEndpointOverride: http://localhost:4566
+        integration:
+          outbound-topic-exchange: update_pipcs_idv_topic
+          sns-endpoint-override: http://localhost:4566
+          sqs-endpoint-override: http://localhost:4566
+          aws-region: EU_WEST_2
+          outbound-queue: update_pipcs_idv_queue
+        inbound:
+          topic: pip_identity_event_nino
+          queueNameIdentityResponse: pip_idv_outcome
+          routingKeyIdentityResponse: pip_identity_inbound_routing
+        outbound:
+          topic: update_pipcs_idv_topic
+          queueNameIdentityResponse: update_pipcs_idv_queue
+          routingKeyIdentityResponse: pip_identity_outbound_routing
+sns:
+  msg:
+    pip_identity_routing_key: new.event
+
+sqs:
+  msg:
+    queue-name: pip_idv_outcome
+    pip_identity_routing_key-prefix: new
+
+feature:
+  mongo:
+    versioned:
+      api:
+        enabled: true
+  encryption:
+    messaging:
+      enabled: false

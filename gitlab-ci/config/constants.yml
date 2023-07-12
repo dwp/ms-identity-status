@@ -1,0 +1,14 @@
+variables:
+  # Repo
+  REPO_OWNER: "pip-apply"
+  REPO_PATTERN: "V3.1 CI"
+  # Product
+  PRODUCT: "pip-apply"
+  # Config
+  BUILD_TYPE: "MAVEN"
+  MAVEN_IMAGE: "maven:3-jdk-11"
+  MVN_OPTS: "-DLOG_LEVEL=INFO"
+  MVN_CLI_OPTS: "--batch-mode"
+  PIP_APPLY_MOCKS_NAME: pip-apply-mocks
+  PIP_APPLY_MOCKS_BRANCH: develop
+  GITHUB_REPO_NAME: ms-identity-status

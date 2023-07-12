@@ -1,0 +1,14 @@
+.idea/
+target/
+*.iml
+*.log
+CHANGELOG.md
+.run
+*.iws
+*.iml
+*.ipr
+
+.DS_Store
+allure-results/
+.vscode
+product-docs-11ty/

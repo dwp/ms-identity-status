@@ -1,0 +1,80 @@
+openapi: 3.0.1
+
+info:
+  title: DWP IDENTITY STATUS SERVICE IDV
+  description: Rest API for managing user identity
+  version: 1.0.0
+
+servers:
+  - url: 'https://localhost:8080'
+
+paths:
+  /v1/identity/get-idv-status-by-subject-id:
+    get:
+      tags:
+        - get
+      summary: Get the IDV status by a subject id
+      operationId: getIdentityBySubjectId
+      parameters:
+        - name: X-Subject-ID
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/subjectId'
+          description: The subject id (email address) of the identity object.
+      responses:
+        200:
+          description: The identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdvDto'
+        404:
+          description: An identity with the given subject id was not found
+
+  /v1/identity/get-idv-status-by-nino:
+    get:
+      tags:
+        - get
+      summary: Get the IDV status by a nino
+      operationId: getIdentityByNino
+      parameters:
+        - name: X-Nino
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/nino'
+          description: The National Insurance Number tied to the identity object.
+      responses:
+        200:
+          description: The identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdvDto'
+        404:
+          description: An identity with the given subject id was not found
+
+components:
+  schemas:
+    IdvDto:
+      required:
+        - idv_status
+      type: object
+      properties:
+        idv_status:
+          type: string
+          description: status of the identification
+          example: verified
+          enum:
+            - verified
+            - unverified
+
+    subjectId:
+      type: string
+      pattern: "(^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$)"
+      example: fred.blogs@email.com
+
+    nino:
+      type: string
+      pattern: ^(?!BG|GB|NK|KN|TN|NT|ZZ)[ABCEGHJ-PRSTW-Z][ABCEGHJ-NPRSTW-Z]\d{6}[A-D]

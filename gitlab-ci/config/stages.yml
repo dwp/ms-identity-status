@@ -1,0 +1,21 @@
+stages:
+  - update-version
+  - code-quality
+  - code-test
+  - application-build
+  - code-analysis
+  - site-report
+  - image-build
+  - container-image-test
+  - component-test
+  - image-push
+  - update-project-metadata
+  - generate-api-docs
+  - pages
+  - create-schedules
+  - update-changelog
+  - release-mr-main
+  - release-tag
+  - release-update-version
+  - release-mr-develop
+  - open-source
