@@ -70,8 +70,6 @@ downloaded from AWS as it is not available in Nexus. To achieve this,
     <pre>[default]
   aws_access_key_id = YOUR_GENERATED_ACCESS_KEY_ID 
   aws_secret_access_key = YOUR_GENERATED_SECRET </pre>
-- once done, log in to nonprod ECR
-- make sure you receive confirmation of `Login Succeeded`. If not resolve the credentials.
 
 ### Local run in docker
 
@@ -79,8 +77,16 @@ to run the app on docker locally, run the following commands:
 
 - docker image rm local/ms-identity-status (to make sure the old image is removed)
 - mvn clean verify
-- docker build -t local/ms-identity-status .
-- docker compose up
+
+Then run the following command in another terminal window:
+
+<pre>
+sh scripts/ms-identity-status.sh
+</pre>
+
+NOTE: This script logs into AWS ECR to get the latest `pip-apply-mocks` functionality and starts up
+the build locally. This script has been redacted from the public domain 
+as it contains a reference to a private ECR repository.
 
 ## Running it locally
 
