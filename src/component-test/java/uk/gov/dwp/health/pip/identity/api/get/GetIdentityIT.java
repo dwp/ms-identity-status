@@ -47,7 +47,8 @@ public class GetIdentityIT extends ApiTest {
                 "verified",
                 "RN000004A",
                 "application123",
-                ""));
+                "",
+                null));
 
     String subjectId = "test@dwp.gov.uk";
 
@@ -82,7 +83,8 @@ public class GetIdentityIT extends ApiTest {
                 "verified",
                 "RN000004A",
                 "application123",
-                ""));
+                "",
+                null));
 
     Response response =
         getRequestWithHeader(UrlBuilderUtil.getIdvStatusByNinoUrl(), "X-Nino", "RN000004A");

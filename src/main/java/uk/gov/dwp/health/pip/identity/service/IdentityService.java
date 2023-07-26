@@ -11,4 +11,6 @@ public interface IdentityService {
   Optional<Identity> getIdentityBySubjectId(String subjectId);
 
   Optional<Identity> getIdentityByNino(String nino);
+
+  Optional<Identity> getIdentityByApplicationId(String applicationId);
 }

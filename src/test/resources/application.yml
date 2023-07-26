@@ -1,27 +1,9 @@
-logging:
-  level:
-    root: INFO
-
 spring:
+  mongodb:
+    embedded:
+      version: 5.0.0
+  data:
+    mongodb:
+      database: identity
   main:
-    banner-mode: 'off'
-
-server:
-  port: 8080
-
-feature:
-  mongo:
-    versioned:
-      api:
-        enabled: true
-  encryption:
-    messaging:
-      enabled: false
-
-application:
-  manager:
-    base:
-      url: /
-max:
-  timeout:
-    millis: 29000
+    banner-mode: off

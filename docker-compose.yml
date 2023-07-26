@@ -86,6 +86,8 @@ services:
         sleep 30
         mvn ${MVN_OPTS} verify -Papi-component-tests
     working_dir: /usr/src
+    depends_on: 
+      - ms-identity-status
     environment:
       AWS_ACCESS_KEY: aws-access-key
       AWS_SECRET_KEY: aws-secret-key

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import uk.gov.dwp.health.identity.status.openapi.api.V1Api;
+import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
 import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
 import uk.gov.dwp.health.pip.identity.service.IdentityService;
 
@@ -50,5 +51,22 @@ public class IdentityController implements V1Api {
                     new IdvDto().idvStatus(IdvDto.IdvStatusEnum.fromValue(identity.getIdvStatus())),
                     OK))
         .orElseGet(() -> new ResponseEntity<>(NOT_FOUND));
+  }
+
+  @Override
+  public ResponseEntity<IdentityDto> getIdentityByApplicationId(String applicationId) {
+    log.info("Request to get Identity by application id received");
+
+    return identityService
+      .getIdentityByApplicationId(applicationId)
+      .map(
+        identity ->
+          new ResponseEntity<>(
+            new IdentityDto()
+              .applicationId(identity.getApplicationID())
+              .nino(identity.getNino())
+              .subjectId(identity.getSubjectId()),
+            OK))
+      .orElseGet(() -> new ResponseEntity<>(NOT_FOUND));
   }
 }

@@ -1,5 +1,6 @@
 package uk.gov.dwp.health.pip.identity.messaging;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uk.gov.dwp.health.integration.message.consumers.HealthMessageConsumer;
+import uk.gov.dwp.health.pip.identity.exception.ConflictException;
 import uk.gov.dwp.health.pip.identity.exception.ValidationException;
 import uk.gov.dwp.health.pip.identity.messaging.properties.PipIdvOutcomeInboundEventProperties;
 import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
@@ -50,21 +52,25 @@ public class PipIdvOutcomeMessageConsumer implements HealthMessageConsumer<Map<S
     if (validateInput(payload)) {
       IdentityRequestUpdateSchemaV1 updateIdvRequest;
       try {
-        updateIdvRequest = objectMapper.convertValue(payload,
-                IdentityRequestUpdateSchemaV1.class);
-        log.debug("Received an identity create request message {}", updateIdvRequest.toString());
-      } catch (Exception e) {
-        throw new ValidationException("Input values are not valid " + e.getMessage());
-      }
+        try {
+          updateIdvRequest = objectMapper.convertValue(payload,
+                  IdentityRequestUpdateSchemaV1.class);
+          log.debug("Received a identity create request message {}", updateIdvRequest.toString());
+        } catch (Exception e) {
+          throw new ValidationException("Input values are not valid " + e.getMessage());
+        }
 
-      var identity = identityService.createIdentity(updateIdvRequest);
+        var identity = identityService.createIdentity(updateIdvRequest);
 
-      if (!StringUtils.hasText(identity.getErrorMessage())) {
-        updatePipCsIdentityMessagePublisher.publishMessage(
-                identity.getApplicationID(),
-                identity.getIdvStatus(),
-                identity.getIdentityId().toString());
-        log.debug(" Message publish completed. ");
+        if (!StringUtils.hasText(identity.getErrorMessage())) {
+          updatePipCsIdentityMessagePublisher.publishMessage(
+                  identity.getApplicationID(),
+                  identity.getIdvStatus(),
+                  identity.getIdentityId().toString());
+          log.debug(" Message publish completed. ");
+        }
+      } catch (ConflictException e) {
+        log.warn("Conflict Exception thrown creating identity");
       }
     } else {
       throw new ValidationException("Mandatory values are not supplied or not valid");

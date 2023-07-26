@@ -1,6 +1,5 @@
 package uk.gov.dwp.health.pip.identity.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -8,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.dwp.health.pip.identity.config.web.ReactorWebClient;
-import uk.gov.dwp.health.pip.identity.config.web.ReactorWebClientFactory;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.exception.ConflictException;
 import uk.gov.dwp.health.pip.identity.exception.GenericRuntimeException;
@@ -38,16 +36,10 @@ class IdentityServiceTest {
 
   @Mock ReactorWebClient webClient;
 
-  @Mock ReactorWebClientFactory webClientFactory;
-
-  @BeforeEach
-  void setUp() {
-    when(webClientFactory.getClient()).thenReturn(webClient);
-  }
 
   @Test
   void createIdentity_successfullyCreates_whenApplicationManagerReturnsApplicationId() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -71,7 +63,8 @@ class IdentityServiceTest {
             idvOutcome.toString(),
             "RN000004A",
             "applicationId",
-            "");
+            "",
+            null);
 
     when(repository.findByNino("RN000004A")).thenReturn(Optional.empty());
     when(repository.save(any(Identity.class))).thenReturn(savedIdentity);
@@ -85,7 +78,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_successfullyCreates_whenApplicationManagerReturnsNoApplicationId() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -109,7 +102,8 @@ class IdentityServiceTest {
             idvOutcome.toString(),
             "RN000004A",
             null,
-            "Application ID not found for identity with id: " + identityId);
+            "Application ID not found for identity with id: " + identityId,
+            null);
 
     when(repository.findByNino("RN000004A")).thenReturn(Optional.empty());
     when(repository.save(any(Identity.class))).thenReturn(savedIdentity);
@@ -123,7 +117,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_successfullyCreates_whenApplicationIdReturnsNull() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -147,7 +141,8 @@ class IdentityServiceTest {
             idvOutcome.toString(),
             "RN000004A",
             null,
-            "Application ID not found for identity with id: 531a6d93-3889-45d5-92cd-9d5bb78d1a89");
+            "Application ID not found for identity with id: 531a6d93-3889-45d5-92cd-9d5bb78d1a89",
+            null);
 
     when(repository.findByNino("RN000004A")).thenReturn(Optional.empty());
     when(repository.save(any(Identity.class))).thenReturn(savedIdentity);
@@ -166,7 +161,7 @@ class IdentityServiceTest {
 
   @Test
   void processForApplicationId_savesConflictErrorMessageToIdentity_whenApiResponseReturns409() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -203,7 +198,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_throwsException_whenApplicationManagerRuntimeErrors() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
 
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
@@ -227,7 +222,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_throwsException_whenApplicationManagerRuntimeErrors_on_update() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
 
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
@@ -252,7 +247,8 @@ class IdentityServiceTest {
                     idvOutcome.toString(),
                     "RN000004A",
                     null,
-                    "Application ID not found for identity with id: 531a6d93-3889-45d5-92cd-9d5bb78d1a89");
+                    "Application ID not found for identity with id: 531a6d93-3889-45d5-92cd-9d5bb78d1a89",
+                    null);
 
     when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
     when(webClient.post("/v1/application/matcher", String.class, "{\"nino\":\"RN000004A\"}"))
@@ -263,7 +259,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_successfullyCreates_whenApplicationManagerOtherException() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
 
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
@@ -288,7 +284,8 @@ class IdentityServiceTest {
             idvOutcome.toString(),
             "RN000004A",
             null,
-            "Server error: example server error");
+            "Server error: example server error",
+            null);
 
     when(repository.findByNino("RN000004A")).thenReturn(Optional.empty());
     when(repository.save(any(Identity.class))).thenReturn(savedIdentity);
@@ -302,7 +299,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_doesNotthrowException_whenExistingNinoIsPresentAndApplicationIdIsNotPresent() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -326,14 +323,15 @@ class IdentityServiceTest {
                     idvOutcome.toString(),
                     "RN000004A",
                     null,
-                    "Test123");
+                    "Test123",
+                    null);
     when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
     assertDoesNotThrow(() -> service.createIdentity(newIdentityRequest));
   }
 
   @Test
   void createIdentity_doesNotThrowException_whenExistingSubjectIsPresentAndApplicationIDIsNull() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -358,7 +356,8 @@ class IdentityServiceTest {
                     idvOutcome.toString(),
                     "RN000004A",
                     null,
-                    "Test123");
+                    "Test123",
+                    null);
     when(repository.findBySubjectId("subjectId")).thenReturn(Optional.of(savedIdentity));
     when(webClient.post("/v1/application/matcher", String.class, "{\"nino\":\"RN000005A\"}"))
             .thenReturn(Mono.just("{\"application_id\":\"123\"}"));
@@ -375,7 +374,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_doesNotThrowException_whenExistingNinoIsPresentAndApplicationIDIsNull() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -400,7 +399,8 @@ class IdentityServiceTest {
                     idvOutcome.toString(),
                     "RN000004A",
                     null,
-                    "Test123");
+                    "Test123",
+                    null);
     when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
     when(webClient.post("/v1/application/matcher", String.class, "{\"nino\":\"RN000004A\"}"))
             .thenReturn(Mono.just("{\"application_id\":\"722\"}"));
@@ -417,7 +417,7 @@ class IdentityServiceTest {
 
   @Test
   void createIdentity_doesNotThrowException_whenExistingNinoIsPresentAndApplicationIDIsNotFound() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
     LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
     IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
     IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
@@ -442,7 +442,8 @@ class IdentityServiceTest {
                     idvOutcome.toString(),
                     "RN000004A",
                     null,
-                    "Test123");
+                    "Test123",
+                    null);
     when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
     when(webClient.post("/v1/application/matcher", String.class, "{\"nino\":\"RN000004A\"}"))
             .thenReturn(Mono.just(""));
@@ -455,12 +456,12 @@ class IdentityServiceTest {
     assertEquals(captor.getValue().getSubjectId(), "test2@dwp.gov.uk");
     assertNull(captor.getValue().getApplicationID());
     assertEquals(captor.getValue().getErrorMessage(), "Application ID not found for identity with id: " +
-            newIdentityId.toString());
+            newIdentityId);
   }
 
   @Test
   void getIdentityBySubjectId_returnsOptionalEmpty_whenNoIdentityFound() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
 
     String subjectId = "test@dwp.gov.uk";
     when(repository.findBySubjectId(subjectId)).thenReturn(Optional.empty());
@@ -470,7 +471,7 @@ class IdentityServiceTest {
 
   @Test
   void getIdentityBySubjectId_returnsIdentity_whenSubjectIdMatches() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
 
     String subjectId = "test@dwp.gov.uk";
     Identity savedIdentity =
@@ -483,7 +484,8 @@ class IdentityServiceTest {
             "verified",
             "RN000004A",
             "applicationId",
-            "");
+            "",
+            null);
 
     when(repository.findBySubjectId(subjectId)).thenReturn(Optional.of(savedIdentity));
 
@@ -492,7 +494,7 @@ class IdentityServiceTest {
 
   @Test
   void getIdentityByNino_returnsOptionalEmpty_whenNoIdentityFound() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
 
     String nino = "RN000004A";
     when(repository.findByNino(nino)).thenReturn(Optional.empty());
@@ -502,7 +504,7 @@ class IdentityServiceTest {
 
   @Test
   void getIdentityByNino_returnsIdentity_whenNinoMatches() {
-    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClientFactory);
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
 
     String nino = "RN000004A";
     Identity savedIdentity =
@@ -515,10 +517,34 @@ class IdentityServiceTest {
             "verified",
             "RN000004A",
             "applicationId",
-            "");
+            "",
+            null);
 
     when(repository.findByNino(nino)).thenReturn(Optional.of(savedIdentity));
 
     assertEquals(Optional.of(savedIdentity), service.getIdentityByNino(nino));
+  }
+
+  @Test
+  void getIdentityByApplicationId_returnsIdentity_whenNinoMatches() {
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
+
+    var applicationId = "507f1f77bcf86cd799439011";
+    Identity savedIdentity =
+        new Identity(
+            "id",
+            "test@dwp.gov.uk",
+            identityId,
+            LocalDateTime.now().minusMinutes(2),
+            "oidv",
+            "verified",
+            "RN000004A",
+            applicationId,
+            "",
+            null);
+
+    when(repository.findByApplicationID(applicationId)).thenReturn(Optional.of(savedIdentity));
+
+    assertEquals(Optional.of(savedIdentity), service.getIdentityByApplicationId(applicationId));
   }
 }

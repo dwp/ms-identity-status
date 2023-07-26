@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
 import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityServiceImpl;
@@ -31,7 +32,7 @@ class IdentityControllerTest {
 
     Identity savedIdentity =
         new Identity(
-            "id", subjectId, identityId, dateTime, "oidv", "verified", "nino", "applicationId", "");
+            "id", subjectId, identityId, dateTime, "oidv", "verified", "nino", "applicationId", "", null);
 
     when(service.getIdentityBySubjectId(subjectId)).thenReturn(Optional.of(savedIdentity));
 
@@ -78,7 +79,8 @@ class IdentityControllerTest {
             "verified",
             nino,
             "applicationId",
-            "");
+            "",
+            null);
 
     when(service.getIdentityByNino(nino)).thenReturn(Optional.of(savedIdentity));
 
@@ -96,6 +98,44 @@ class IdentityControllerTest {
 
     ResponseEntity<IdvDto> expectedResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);
     ResponseEntity<IdvDto> actualResponse = controller.getIdentityByNino(nino);
+
+    assertEquals(expectedResponse, actualResponse);
+  }
+
+  @Test
+  void getIdentityByApplicationId_returns200_whenSuccessfullyFound() {
+    var applicationId = "507f1f77bcf86cd799439011";
+    LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
+
+    Identity savedIdentity =
+        new Identity(
+            "id",
+            "test@dwp.gov.uk",
+            identityId,
+            dateTime,
+            "oidv",
+            "verified",
+            "RN000010A",
+            applicationId,
+            "",
+            null);
+
+    when(service.getIdentityByApplicationId(applicationId)).thenReturn(Optional.of(savedIdentity));
+
+    ResponseEntity<IdentityDto> actualResponse = controller.getIdentityByApplicationId(applicationId);
+    assertEquals(HttpStatus.OK, actualResponse.getStatusCode());
+    assertEquals(applicationId, actualResponse.getBody().getApplicationId());
+    assertEquals("RN000010A", actualResponse.getBody().getNino());
+    assertEquals("test@dwp.gov.uk", actualResponse.getBody().getSubjectId());
+  }
+
+  @Test
+  void getIdentityByApplicationId_returns404_whenNoIdentityFound() {
+    var applicationId = "507f1f77bcf86cd799439011";
+    when(service.getIdentityByApplicationId(applicationId)).thenReturn(Optional.empty());
+
+    ResponseEntity<IdentityDto> expectedResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    ResponseEntity<IdentityDto> actualResponse = controller.getIdentityByApplicationId(applicationId);
 
     assertEquals(expectedResponse, actualResponse);
   }

@@ -1,6 +1,7 @@
 package uk.gov.dwp.health.pip.identity.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,9 +9,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @AllArgsConstructor
 @Builder
@@ -20,30 +19,34 @@ import java.util.UUID;
 public class Identity {
   @Id private String id;
 
-  @JsonProperty(value = "subject_id", required = true)
+  @Field(value = "subjectId")
   @Indexed
   private String subjectId;
 
-  @JsonProperty(value = "identity_id", required = true)
+  @Field(value = "identityId")
   @Indexed
   private UUID identityId;
 
-  @JsonProperty(value = "date_time", required = true)
+  @Field(value = "dateTime")
   private LocalDateTime dateTime;
 
-  @JsonProperty(value = "channel", required = true)
+  @Field(value = "channel")
   private String channel;
 
-  @JsonProperty(value = "idv_status", required = true)
+  @Field(value = "idvStatus")
   private String idvStatus;
 
-  @JsonProperty(value = "nino", required = true)
+  @Field(value = "nino")
   @Indexed
   private String nino;
 
-  @JsonProperty("application_id")
+  @Field("applicationID")
+  @Indexed(unique = true)
   private String applicationID;
 
-  @JsonProperty("error_message")
+  @Field("errorMessage")
   private String errorMessage;
+
+  @Field(value = "vot")
+  private String vot;
 }
