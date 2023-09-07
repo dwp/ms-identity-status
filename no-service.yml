@@ -8,24 +8,51 @@ services:
       - AWS_ACCESS_KEY_ID=dummyaccess
       - AWS_SECRET_ACCESS_KEY=dummysecret
       - AWS_DEFAULT_REGION=eu-west-2
-      - HOSTNAME_EXTERNAL=localstack
       - SERVICES=sns,sqs,kms
     healthcheck:
-      test: ["CMD", "curl", "http://localhost:4566/health"]
+      test: [ "CMD", "curl", "http://localhost:4566/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
-    volumes:
-      - ./localstack:/docker-entrypoint-initaws.d
-
-  mongo:
-    image: mongo:5.0@sha256:82302b06360729842acd27ab8a91c90e244f17e464fcfd366b7427af652c5559
-    expose:
-      - 27017
     ports:
-      - "27017:27017"
+      - "4566:4566"
+    volumes:
+      - ./config/localstack:/docker-entrypoint-initaws.d
+
+  mongodb-repl:
+    image: mongo:5.0@sha256:ee514514754ffdb13597a894bdae90fdabbe4c0926bf96b40a84d1233782bcc1
+    volumes:
+      - ./config/mongo-replicator/submission.js:/tmp/submission.js
+      - ./config/mongo-replicator/replicate.js:/tmp/replicate.js
+      - ./config/mongo-replicator/setup.sh:/tmp/setup.sh
+    command: /bin/sh /tmp/setup.sh
+    depends_on:
+      mongo-primary:
+        condition: service_healthy
+      mongo-secondary:
+        condition: service_healthy
+
+  mongo-primary:
+    image: mongo:5.0@sha256:ee514514754ffdb13597a894bdae90fdabbe4c0926bf96b40a84d1233782bcc1
+    command: --replSet rs0 --bind_ip_all
     healthcheck:
       test: mongo --eval "db.adminCommand('ping')"
       interval: 5s
       timeout: 5s
       retries: 10
+    ports:
+      - "27017:27017"
+
+  mongo-secondary:
+    image: mongo:5.0@sha256:ee514514754ffdb13597a894bdae90fdabbe4c0926bf96b40a84d1233782bcc1
+    command: --replSet rs0 --bind_ip_all
+    healthcheck:
+      test: mongo --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "27018:27017"
+    depends_on:
+      mongo-primary:
+        condition: service_started

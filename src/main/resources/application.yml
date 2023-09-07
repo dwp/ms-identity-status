@@ -20,6 +20,9 @@ feature:
   encryption:
     messaging:
       enabled: false
+  data:
+    changestream:
+      enabled: false
 
 application:
   manager:
@@ -28,3 +31,17 @@ application:
 max:
   timeout:
     millis: 29000
+
+uk:
+  gov:
+    dwp:
+      health:
+        changestream:
+          channels:
+            - collection: identity
+              routingKey: identity.changed
+              database: identity
+management:
+  endpoint:
+    health:
+      show-details: always

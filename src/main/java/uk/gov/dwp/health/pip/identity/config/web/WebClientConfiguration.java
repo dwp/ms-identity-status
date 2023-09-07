@@ -17,7 +17,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class WebClientConfiguration {
 
   @Bean
-  public WebClient applicationManagerWebClient(
+  public WebClient appManagerWebClient(
       @Value("${application.manager.base.url}") String baseUrl,
       @Value("${max.timeout.millis}") Integer timeout) {
 

@@ -10,13 +10,14 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import uk.gov.dwp.health.mongo.changestream.extension.MongoChangeStreamIdentifier;
 
 @AllArgsConstructor
 @Builder
 @Getter
 @Setter
 @Document(collection = "identity")
-public class Identity {
+public class Identity extends MongoChangeStreamIdentifier {
   @Id private String id;
 
   @Field(value = "subjectId")

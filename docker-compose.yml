@@ -56,8 +56,17 @@ services:
       - UK_GOV_DWP_HEALTH_OUTBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_outbound_routing
       - UK_GOV_DWP_HEALTH_OUTBOUND_QUEUE_NAME_IDENTITY_RESPONSE=update_pipcs_idv_queue
       - UK_GOV_DWP_HEALTH_OUTBOUND_TOPIC=update_pipcs_idv_topic
+      - UK_GOV_DWP_HEALTH_OUTBOUND_GUIDEVENT_TOPIC=pip_identity_event_guid
+      - UK_GOV_DWP_HEALTH_OUTBOUND_GUIDEVENT_ROUTINGKEY=pip_identity_outbound_routing
       - FEATURE_ENCRYPTION_MESSAGING_ENABLED=false
       - APPLICATION_MANAGER_BASE_URL=http://wm-application-manager:8080
+      - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_COLLECTION=identity
+      - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_DATABASE=identity
+      - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_ROUTING_KEY=identity.changed
+      - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_SKIP_DECRYPTION=true
+      - UK_GOV_DWP_HEALTH_INTEGRATION_MESSAGING_TYPE=aws
+      - UK_GOV_DWP_HEALTH_INTEGRATION_OUTBOUND_TOPIC_EXCHANGE=stream-topic
+      - FEATURE_DATA_CHANGESTREAM_ENABLED=false
     depends_on:
       localstack:
         condition: service_healthy
@@ -86,7 +95,7 @@ services:
         sleep 30
         mvn ${MVN_OPTS} verify -Papi-component-tests
     working_dir: /usr/src
-    depends_on: 
+    depends_on:
       - ms-identity-status
     environment:
       AWS_ACCESS_KEY: aws-access-key

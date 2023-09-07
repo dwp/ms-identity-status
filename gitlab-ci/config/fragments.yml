@@ -78,7 +78,7 @@ include:
     file: 'ci-include-pages_tech_docs-base.yml'
     #create-schedules
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/schedule-creation'
-    ref: 2.5.1
+    ref: 2.6.0
     file: 'ci-include-schedule-creation-base.yml'
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/open-source'
     ref: 2.2.2
@@ -89,5 +89,5 @@ include:
     file: 'ci-include-release-jobs-gitflow.yml'
     #live-compliance
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/live-compliance-check'
-    ref: 1.0.0
+    ref: 1.0.1
     file: 'ci-include-live-compliance.yml'

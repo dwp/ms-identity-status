@@ -1,17 +1,25 @@
 package uk.gov.dwp.health.pip.identity.api;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import uk.gov.dwp.health.identity.status.openapi.api.V1Api;
-import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
-import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
-import uk.gov.dwp.health.pip.identity.service.IdentityService;
-
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import uk.gov.dwp.health.identity.status.openapi.api.V1Api;
+import uk.gov.dwp.health.identity.status.openapi.model.ApplicationIdDto;
+import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
+import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
+import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
+import uk.gov.dwp.health.pip.identity.exception.ValidationException;
+import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
+import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
+import uk.gov.dwp.health.pip.identity.service.IdentityService;
+import uk.gov.dwp.health.pip.identity.utils.IdentityStatusCalculator;
+import uk.gov.dwp.health.pip.identity.utils.TokenUtils;
 
 @Slf4j
 @Controller
@@ -20,16 +28,18 @@ public class IdentityController implements V1Api {
 
   private static final String EMAIL_REGEX = "(^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$)";
   private final IdentityService identityService;
+  private final IdentityRegistrationService identityApiService;
 
   @Override
   public ResponseEntity<IdvDto> getIdentityByNino(String nino) {
     log.info("Request to get idv status for nino received");
     return identityService
         .getIdentityByNino(nino)
+        .map(IdentityStatusCalculator::fromIdentity)
         .map(
-            identity ->
+            value ->
                 new ResponseEntity<>(
-                    new IdvDto().idvStatus(IdvDto.IdvStatusEnum.fromValue(identity.getIdvStatus())),
+                    new IdvDto().idvStatus(IdvDto.IdvStatusEnum.fromValue(value)),
                     OK))
         .orElseGet(() -> {
           log.warn("No idv status found for nino");
@@ -45,10 +55,11 @@ public class IdentityController implements V1Api {
     }
     return identityService
         .getIdentityBySubjectId(subjectId)
+        .map(IdentityStatusCalculator::fromIdentity)
         .map(
-            identity ->
+            value ->
                 new ResponseEntity<>(
-                    new IdvDto().idvStatus(IdvDto.IdvStatusEnum.fromValue(identity.getIdvStatus())),
+                    new IdvDto().idvStatus(IdvDto.IdvStatusEnum.fromValue(value)),
                     OK))
         .orElseGet(() -> new ResponseEntity<>(NOT_FOUND));
   }
@@ -68,5 +79,32 @@ public class IdentityController implements V1Api {
               .subjectId(identity.getSubjectId()),
             OK))
       .orElseGet(() -> new ResponseEntity<>(NOT_FOUND));
+  }
+
+  @Override
+  public ResponseEntity<IdentityResponse> register(String token, String channel) {
+    String payload = TokenUtils.decodePayload(token);
+    IdentityResponseDto responseDto;
+    try {
+      responseDto = identityApiService.register(payload, channel);
+    } catch (ValidationException e) {
+      return ResponseEntity.badRequest().build();
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().build();
+    }
+    if (responseDto == null) {
+      return ResponseEntity.ok().build();
+    }
+    if (responseDto.isCreated()) {
+      return ResponseEntity.status(HttpStatus.CREATED).body(responseDto.getIdentityResponse());
+    }
+    return ResponseEntity.ok().body(responseDto.getIdentityResponse());
+  }
+
+  @Override
+  public ResponseEntity<Void> updateApplicationId(String identityId, 
+                                                  ApplicationIdDto applicationIdDto) {
+    identityService.updateApplicationId(identityId, applicationIdDto.getApplicationId());
+    return ResponseEntity.accepted().build();
   }
 }

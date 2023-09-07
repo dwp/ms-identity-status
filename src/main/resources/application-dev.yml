@@ -11,13 +11,8 @@ uk:
   gov:
     dwp:
       health:
-        event:
-          cryptoConfig:
-            cacheKmsDataKeys: true
-            dataKeyId: alias/example_kms
-            kmsEndpointOverride: http://localhost:4566
         integration:
-          outbound-topic-exchange: update_pipcs_idv_topic
+          outbound-topic-exchange: stream-topic
           sns-endpoint-override: http://localhost:4566
           sqs-endpoint-override: http://localhost:4566
           aws-region: EU_WEST_2
@@ -30,6 +25,10 @@ uk:
           topic: update_pipcs_idv_topic
           queueNameIdentityResponse: update_pipcs_idv_queue
           routingKeyIdentityResponse: pip_identity_outbound_routing
+          guidEvent:
+            topic: pip_identity_event_guid
+            routingKey: pip_identity_outbound_routing
+
 sns:
   msg:
     pip_identity_routing_key: new.event
@@ -55,3 +54,10 @@ application:
 max:
   timeout:
     millis: 29000
+
+aws:
+  encryption:
+    message-data-key-id: alias/test_event_request_id
+    region: eu-west-2
+    kms-key-cache: true
+    kms-override: http://localhost:4566

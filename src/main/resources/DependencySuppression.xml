@@ -9,16 +9,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: snakeyaml
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-        <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
-        <vulnerabilityName>CVE-2021-4235</vulnerabilityName>
-        <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
-        <vulnerabilityName>CVE-2022-3064</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
       <groupId>uk.gov.dwp.health</groupId>
       <artifactId>data-cryptography</artifactId>
       file name: bc-fips-1.0.2.3.jar
@@ -33,8 +23,15 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: netty-handler-4.1.92.Final.jar
+   file name: tomcat-embed-core-9.0.79.jar
    ]]></notes>
-        <vulnerabilityName>CVE-2023-34462</vulnerabilityName>
+        <vulnerabilityName>CVE-2023-41080</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: netty-handler-4.1.94.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-handler@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
     </suppress>
 </suppressions>
