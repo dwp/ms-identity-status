@@ -18,12 +18,17 @@ import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
 import uk.gov.dwp.health.integration.message.Constants;
 import uk.gov.dwp.health.logging.LoggerContext;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
+import uk.gov.dwp.health.pip.identity.exception.AccountNotFoundException;
+import uk.gov.dwp.health.pip.identity.exception.ConflictException;
+import uk.gov.dwp.health.pip.identity.exception.IdentityNotFoundException;
 import uk.gov.dwp.health.pip.identity.exception.ValidationException;
 import uk.gov.dwp.health.pip.identity.messaging.PipIdentityGuidEventPublisher;
+import uk.gov.dwp.health.pip.identity.model.AccountDetailsResponse;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.model.TokenPayload;
 import uk.gov.dwp.health.pip.identity.repository.IdentityRepository;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityBuilder;
+import uk.gov.dwp.health.pip.identity.webclient.AccountManagerWebClient;
 import uk.gov.dwp.health.pip.identity.webclient.ApplicationManagerWebClient;
 
 @Service
@@ -32,38 +37,61 @@ import uk.gov.dwp.health.pip.identity.webclient.ApplicationManagerWebClient;
 public class IdentityRegistrationService {
 
   private final IdentityRepository repository;
-  private final ApplicationManagerWebClient webClient;
+  private final ApplicationManagerWebClient applicationManagerWebClient;
+  private final AccountManagerWebClient accountManagerWebClient;
   private final ObjectMapper objectMapper;
   private final Validator validator;
   private final LoggerContext loggerContext;
   private final PipIdentityGuidEventPublisher guidEventPublisher;
 
   public IdentityResponseDto register(String payload, String channel) {
-
+    
     TokenPayload tokenPayload = parsePayload(payload);
     Set<ConstraintViolation<TokenPayload>> violations = validator.validate(tokenPayload);
+
     if (!violations.isEmpty()) {
       log.error("Invalid payload {}", violations);
       throw new ValidationException("Invalid payload");
     }
-    if (isNotBlank(tokenPayload.getGuid())) {
+    final Optional<Identity> subjectRecord = repository.findBySubjectId(tokenPayload.getSub());
+    if (shouldPublishGuidEvent(tokenPayload.getGuid(), subjectRecord)) {
       guidEventPublisher.publish(tokenPayload, loggerContext.get(Constants.CORRELATION_ID_LOG_KEY));
       return null;
     } else {
-      final Optional<Identity> subjectRecord = repository.findBySubjectId(tokenPayload.getSub());
+      final var sub = tokenPayload.getSub();
+      if (tokenPayload.getVot() == null && subjectRecord.isPresent()) {
+        Identity identity = subjectRecord.get();
+        return getIdentityResponseDto(
+                identity.getId(), identity.getApplicationID(), identity.getSubjectId(), false);
+      } else if (tokenPayload.getVot() == null) {
+        throw new IdentityNotFoundException("No VOT in token and no Identity found for sub");
+      }
+
+      if (accountExistsForEmail(sub)) {
+        throw new ConflictException("Account already exists for email");
+      }
+
       Pair<Boolean, Identity> identityPair =
           subjectRecord
               .map(identity -> Pair.of(false, updateSubjectRecord(identity, tokenPayload, channel)))
               .orElseGet(() -> Pair.of(true, create(tokenPayload, channel)));
 
-      IdentityResponse identityResponse =
-          new IdentityResponse()
-              .ref(identityPair.getRight().getId())
-              .applicationId(identityPair.getRight().getApplicationID());
-      
-      identityResponse.setSubjectId(identityPair.getRight().getSubjectId());
-      return IdentityResponseDto.of(identityPair.getLeft(), identityResponse);
+      return getIdentityResponseDto(
+              identityPair.getRight().getId(),
+              identityPair.getRight().getApplicationID(),
+              identityPair.getRight().getSubjectId(),
+              identityPair.getLeft());
     }
+  }
+
+  private IdentityResponseDto getIdentityResponseDto(
+      String ref, String applicationId, String sub, boolean isCreated) {
+    IdentityResponse identityResponse =
+        new IdentityResponse().ref(ref).applicationId(applicationId);
+
+    identityResponse.setSubjectId(sub);
+
+    return IdentityResponseDto.of(isCreated, identityResponse);
   }
 
   private TokenPayload parsePayload(String payload) {
@@ -88,7 +116,8 @@ public class IdentityRegistrationService {
 
     if (isBlank(identity.getApplicationID()) && isNotBlank(identity.getNino())) {
       try {
-        Optional<Object> applicationId = webClient.getApplicationId(identity.getNino());
+        Optional<Object> applicationId =
+            applicationManagerWebClient.getApplicationId(identity.getNino());
         applicationId.ifPresentOrElse(
             id -> {
               builder.applicationID(String.valueOf(id));
@@ -116,5 +145,19 @@ public class IdentityRegistrationService {
             .subjectId(tokenPayload.getSub())
             .build();
     return repository.save(identity);
+  }
+
+  private boolean shouldPublishGuidEvent(String guid, Optional<Identity> identity) {
+    return isNotBlank(guid) && (identity.isEmpty() || isBlank(identity.get().getNino()));
+  }
+
+  private boolean accountExistsForEmail(String sub) {
+    try {
+      Optional<AccountDetailsResponse> accountDetailsFromEmail =
+          accountManagerWebClient.getAccountDetailsFromEmail(sub);
+      return accountDetailsFromEmail.isPresent();
+    } catch (AccountNotFoundException e) {
+      return false;
+    }
   }
 }

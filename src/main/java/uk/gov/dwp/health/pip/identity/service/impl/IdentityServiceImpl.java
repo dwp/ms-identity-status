@@ -67,7 +67,7 @@ public class IdentityServiceImpl implements IdentityService {
     var identity = repository.findById(identityId);
     if (identity.isEmpty()) {
       throw new IdentityNotFoundException(
-              String.format("No identity found for given identity id %s", identityId));
+          String.format("No identity found for given identity id %s", identityId));
     }
     identity.get().setApplicationID(applicationId);
     log.info("Application id: {}, has been set for Identity: {}", applicationId, identityId);
@@ -109,12 +109,14 @@ public class IdentityServiceImpl implements IdentityService {
       Identity.IdentityBuilder builder, IdentityRequestUpdateSchemaV1 request) {
     builder.channel(request.getChannel().toString());
     builder.identityId(request.getIdentityId());
-    builder.idvStatus(request.getIdvOutcome().toString());
     builder.dateTime(DateParseUtil.stringToDateTime(request.getTimestamp()));
 
     var vot = request.getVot();
+    var idvOutcome = request.getIdvOutcome();
     if (vot != null) {
       builder.vot(vot.value());
+    } else {
+      builder.idvStatus(idvOutcome.toString());
     }
   }
 
@@ -125,9 +127,9 @@ public class IdentityServiceImpl implements IdentityService {
       processApplicationId(request, builder);
     } else {
       log.info(
-              "Existing record {} has no key changes around Application ID,"
-                      + " therefore not calling Application Manager",
-              record.getIdentityId());
+          "Existing record {} has no key changes around Application ID,"
+              + " therefore not calling Application Manager",
+          record.getIdentityId());
     }
   }
 
@@ -176,8 +178,20 @@ public class IdentityServiceImpl implements IdentityService {
       IdentityRequestUpdateSchemaV1 request, Identity.IdentityBuilder identity) {
     String errorMessage =
         "Application ID not found for identity with id: " + request.getIdentityId();
+    if (!StringUtils.isBlank(identity.build().getApplicationID())) {
+      removeApplicationId(identity);
+    }
     identity.errorMessage(errorMessage);
     log.warn(errorMessage);
+  }
+
+  private static void removeApplicationId(Identity.IdentityBuilder identity) {
+    identity.applicationID(null);
+    log.warn(
+        "Removing applicationId {} from identity {} as no application record"
+            + "found for new nino.",
+        identity.build().getApplicationID(),
+        identity.build().getIdentityId());
   }
 
   @Override

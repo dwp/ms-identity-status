@@ -51,6 +51,12 @@ application:
   manager:
     base:
       url: http://localhost:9970
+
+account:
+  manager:
+    base:
+      url: http://localhost:9930
+
 max:
   timeout:
     millis: 29000

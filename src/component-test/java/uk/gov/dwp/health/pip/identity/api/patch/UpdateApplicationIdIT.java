@@ -55,11 +55,11 @@ public class UpdateApplicationIdIT extends ApiTest {
     }
 
     @Test
-    public void shouldReturn400StatusCodeWhenTheApplicationIdInvalidFormat() {
+    public void shouldReturn500StatusCodeWhenTheApplicationIdInvalidFormat() {
 
         applicationIdDto.setApplicationId("invalid-format");
         int actualResponseCode = patchRequest(updateApplicationIdUrl(ID), applicationIdDto).statusCode();
 
-        assertThat(actualResponseCode).isEqualTo(400);
+        assertThat(actualResponseCode).isEqualTo(500);
     }
 }

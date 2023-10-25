@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.dwp.health.mongo.changestream.config.properties.WatcherConfigProperties;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.exception.*;
 import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
@@ -626,8 +625,8 @@ class  IdentityServiceTest {
     newIdentityRequest.setSubjectId("subjectId2");
     newIdentityRequest.setIdentityId(newIdentityId);
     newIdentityRequest.setTimestamp(DateParseUtil.dateTimeToString(dateTime));
-    newIdentityRequest.setChannel(channelEnum);
     newIdentityRequest.setIdvOutcome(idvOutcome);
+    newIdentityRequest.setChannel(channelEnum);
     newIdentityRequest.setNino("RN000004A");
 
     Identity savedIdentity =
@@ -668,7 +667,6 @@ class  IdentityServiceTest {
     newIdentityRequest.setIdentityId(newIdentityId);
     newIdentityRequest.setTimestamp(DateParseUtil.dateTimeToString(dateTime));
     newIdentityRequest.setChannel(channelEnum);
-    newIdentityRequest.setIdvOutcome(idvOutcome);
     newIdentityRequest.setNino("RN000004A");
     newIdentityRequest.setVot(IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM);
 
@@ -679,11 +677,49 @@ class  IdentityServiceTest {
                     identityId,
                     dateTime,
                     channelEnum.toString(),
-                    idvOutcome.toString(),
+                    null,
                     "RN000004A",
                     null,
                     "Test123",
                     value);
+    when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
+
+    assertDoesNotThrow(() -> service.createIdentity(newIdentityRequest));
+
+    ArgumentCaptor<Identity> identityCaptor = ArgumentCaptor.forClass(Identity.class);
+    verify(repository).save(identityCaptor.capture());
+    Identity updatedIdentity = identityCaptor.getValue();
+    assertEquals(updatedIdentity.getVot(), IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM.toString());
+  }
+
+  @Test
+  @DisplayName("Does not throw exception when upgrading to Medium Uplift")
+  void updatesSuccessfullyOnUpgrade() {
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
+    LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
+    IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
+    UUID newIdentityId = UUID.randomUUID();
+
+    IdentityRequestUpdateSchemaV1 newIdentityRequest = new IdentityRequestUpdateSchemaV1();
+    newIdentityRequest.setSubjectId("subjectId");
+    newIdentityRequest.setIdentityId(newIdentityId);
+    newIdentityRequest.setTimestamp(DateParseUtil.dateTimeToString(dateTime));
+    newIdentityRequest.setChannel(channelEnum);
+    newIdentityRequest.setNino("RN000004A");
+    newIdentityRequest.setVot(IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM);
+
+    Identity savedIdentity =
+            new Identity(
+                    "id",
+                    "subjectId",
+                    identityId,
+                    dateTime,
+                    channelEnum.toString(),
+                    null,
+                    "RN000004A",
+                    null,
+                    "Test123",
+                    "P0.Cl.Cm");
     when(repository.findByNino("RN000004A")).thenReturn(Optional.of(savedIdentity));
 
     assertDoesNotThrow(() -> service.createIdentity(newIdentityRequest));
@@ -933,8 +969,7 @@ class  IdentityServiceTest {
     assertEquals(updatedIdentity.getApplicationID(), "507f1f77bcf86cd799439011");
 
   }
-
-
+  
   @Test
   @DisplayName("Updates application id for valid Identity")
   void updateApplicationId_returnsAccepted_whenIdentityIdFound() {
@@ -960,5 +995,53 @@ class  IdentityServiceTest {
     ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(repository).findById(stringArgumentCaptor.capture());
     assertThat(stringArgumentCaptor.getValue()).isEqualTo(IDENTITY_ID);
+  }
+
+  @Test
+  @DisplayName("Should call Application Manager when Identity has has existing Application ID but Nino has changed"
+          + " and if Nino returns no record then ApplicationId should be cleared from Identity.")
+  void getIdentityBySubjectId_recordFound_whenNinoIsDifferent_applicationManagerCalledAndClearedWhenNoResult() {
+    IdentityServiceImpl service = new IdentityServiceImpl(repository, webClient);
+    LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
+    IdentityRequestUpdateSchemaV1.Channel channelEnum = IdentityRequestUpdateSchemaV1.Channel.OIDV;
+    IdentityRequestUpdateSchemaV1.IdvOutcome idvOutcome =
+            IdentityRequestUpdateSchemaV1.IdvOutcome.VERIFIED;
+    UUID newIdentityId = UUID.randomUUID();
+
+    IdentityRequestUpdateSchemaV1 newIdentityRequest = new IdentityRequestUpdateSchemaV1();
+    newIdentityRequest.setSubjectId("subjectId");
+    newIdentityRequest.setIdentityId(newIdentityId);
+    newIdentityRequest.setTimestamp(DateParseUtil.dateTimeToString(dateTime));
+    newIdentityRequest.setChannel(channelEnum);
+    newIdentityRequest.setIdvOutcome(idvOutcome);
+    newIdentityRequest.setNino("RN000007A");
+    newIdentityRequest.setVot(IdentityRequestUpdateSchemaV1.Vot.P_0_CL_CM);
+
+    Identity savedIdentity =
+            new Identity(
+                    "id",
+                    "subjectId",
+                    identityId,
+                    dateTime,
+                    channelEnum.toString(),
+                    idvOutcome.toString(),
+                    "RN000004A",
+                    "507f1f77bcf86cd799439011",
+                    "Test123",
+                    IdentityRequestUpdateSchemaV1.Vot.P_0_CL_CM.toString());
+    when(repository.findByNino(any())).thenReturn(Optional.empty());
+    when(repository.findBySubjectId("subjectId")).thenReturn(Optional.of(savedIdentity));
+    when(webClient.getApplicationId("RN000007A"))
+            .thenReturn(Optional.empty());
+
+    assertDoesNotThrow(() -> service.createIdentity(newIdentityRequest));
+
+    ArgumentCaptor<Identity> identityCaptor = ArgumentCaptor.forClass(Identity.class);
+    verify(webClient, times(1)).getApplicationId(any());
+    verify(repository).save(identityCaptor.capture());
+    Identity updatedIdentity = identityCaptor.getValue();
+
+    assertEquals(updatedIdentity.getNino(), "RN000007A");
+    assertNull(updatedIdentity.getApplicationID());
   }
 }

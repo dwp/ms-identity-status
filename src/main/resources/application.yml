@@ -28,6 +28,12 @@ application:
   manager:
     base:
       url: /
+
+account:
+  manager:
+    base:
+      url: /
+
 max:
   timeout:
     millis: 29000

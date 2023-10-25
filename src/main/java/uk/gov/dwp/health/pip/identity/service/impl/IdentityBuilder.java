@@ -10,12 +10,14 @@ public class IdentityBuilder {
         .subjectId(request.getSubjectId())
         .identityId(request.getIdentityId())
         .channel(request.getChannel().toString())
-        .idvStatus(request.getIdvOutcome().toString())
         .nino(request.getNino())
         .dateTime(DateParseUtil.stringToDateTime(request.getTimestamp()));
     final var vot = request.getVot();
+    final var idvOutcome = request.getIdvOutcome();
     if (vot != null) {
       builder.vot(vot.toString());
+    } else {
+      builder.idvStatus(idvOutcome.toString());
     }
     return builder;
   }

@@ -11,7 +11,7 @@ include:
     file: 'ci-include-required-fragment-check-base.yml'
   #update-version
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/update-semver'
-    ref: 4-4-2
+    ref: 4.5.0
     file: 'ci-include-update-semver-base.yml'
   #code-quality
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/gitleaks'
@@ -42,7 +42,7 @@ include:
     file: 'ci-include-maven-api-build-base.yml'
     #code-analysis
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/maven-api-pitest'
-    ref: 3-3-4
+    ref: 3.4.0
     file: 'ci-include-maven-api-pitest-base.yml'
   - project: 'dwp/engineering/pipeline-solutions/gitlab/fragments/maven-api-spotbugs'
     ref: 3-2-3

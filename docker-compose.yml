@@ -32,6 +32,11 @@ services:
     ports:
       - "9970:8080"
 
+  wm-account-manager:
+    image: ${MOCK_IMAGE}
+    ports:
+      - "9930:8080"
+
   ms-identity-status:
     image: ${APP_IMAGE}
     build:
@@ -60,6 +65,7 @@ services:
       - UK_GOV_DWP_HEALTH_OUTBOUND_GUIDEVENT_ROUTINGKEY=pip_identity_outbound_routing
       - FEATURE_ENCRYPTION_MESSAGING_ENABLED=false
       - APPLICATION_MANAGER_BASE_URL=http://wm-application-manager:8080
+      - ACCOUNT_MANAGER_BASE_URL=http://wm-account-manager:8080
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_COLLECTION=identity
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_DATABASE=identity
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_ROUTING_KEY=identity.changed
@@ -73,6 +79,8 @@ services:
       mongo:
         condition: service_healthy
       wm-application-manager:
+        condition: service_started
+      wm-account-manager:
         condition: service_started
     expose:
       - 8080

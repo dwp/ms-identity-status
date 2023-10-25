@@ -1,13 +1,5 @@
 package uk.gov.dwp.health.pip.identity.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,15 +13,25 @@ import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
 import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
 import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
-import uk.gov.dwp.health.pip.identity.exception.ValidationException;
+import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityServiceImpl;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class IdentityControllerTest {
   private final UUID identityId = UUID.randomUUID();
   private final UUID applicationId = UUID.randomUUID();
+  private static final String OIDV = IdentityRequestUpdateSchemaV1.Channel.OIDV.value();
   @InjectMocks private IdentityController controller;
   @Mock private IdentityServiceImpl service;
   @Mock private IdentityRegistrationService registrationService;
@@ -45,7 +47,7 @@ class IdentityControllerTest {
             subjectId,
             identityId,
             dateTime,
-            "oidv",
+            OIDV,
             "verified",
             "nino",
             "applicationId",
@@ -93,7 +95,7 @@ class IdentityControllerTest {
             "test@dwp.gov.uk",
             identityId,
             dateTime,
-            "oidv",
+            OIDV,
             "verified",
             nino,
             "applicationId",
@@ -131,7 +133,7 @@ class IdentityControllerTest {
             "test@dwp.gov.uk",
             identityId,
             dateTime,
-            "oidv",
+            OIDV,
             "verified",
             "RN000010A",
             applicationId,
@@ -166,9 +168,9 @@ class IdentityControllerTest {
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmNAZ21haWwuY29tIiwidm90I"
             + "joiUDIuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.zxdfmq-Mo5MRWOKfyamKuSPWQF4gr8aLFU2zseFh7TA";
     IdentityResponse ref = new IdentityResponse().ref("12435668768979");
-    when(registrationService.register(contains("abc@gmail.com"), eq("oidv")))
+    when(registrationService.register(contains("abc@gmail.com"), eq(OIDV)))
         .thenReturn(IdentityResponseDto.of(false, ref));
-    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, "oidv");
+    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, OIDV);
     Assertions.assertThat(registered)
         .extracting(ResponseEntity::getStatusCode)
         .isEqualTo(HttpStatus.OK);
@@ -180,48 +182,23 @@ class IdentityControllerTest {
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmNAZ21haWwuY29tIiwidm90I"
             + "joiUDIuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.zxdfmq-Mo5MRWOKfyamKuSPWQF4gr8aLFU2zseFh7TA";
     IdentityResponse ref = new IdentityResponse().ref("12435668768979");
-    when(registrationService.register(contains("abc@gmail.com"), eq("oidv")))
+    when(registrationService.register(contains("abc@gmail.com"), eq(OIDV)))
         .thenReturn(IdentityResponseDto.of(true, ref));
-    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, "oidv");
+    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, OIDV);
     Assertions.assertThat(registered)
         .extracting(ResponseEntity::getStatusCode)
         .isEqualTo(HttpStatus.CREATED);
   }
-
-  @Test
-  void shouldReturn400ForInvalidToken() {
-    String dummy_token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmNAZ21haWwuY29tIiwidm90I"
-            + "joiUDIuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.zxdfmq-Mo5MRWOKfyamKuSPWQF4gr8aLFU2zseFh7TA";
-    when(registrationService.register(contains("abc@gmail.com"), eq("oidv")))
-        .thenThrow(ValidationException.class);
-    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, "oidv");
-    Assertions.assertThat(registered)
-        .extracting(ResponseEntity::getStatusCode)
-        .isEqualTo(HttpStatus.BAD_REQUEST);
-  }
-  @Test
-  void shouldReturn500ForOtherExceptions() {
-    String dummy_token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmNAZ21haWwuY29tIiwidm90I"
-            + "joiUDIuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.zxdfmq-Mo5MRWOKfyamKuSPWQF4gr8aLFU2zseFh7TA";
-    when(registrationService.register(contains("abc@gmail.com"), eq("oidv")))
-        .thenThrow(RuntimeException.class);
-    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, "oidv");
-    Assertions.assertThat(registered)
-        .extracting(ResponseEntity::getStatusCode)
-        .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-  }
-
+  
   @Test
   void shouldReturn200ForMediumUplift() {
     String dummy_token =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmNAZ21haWwuY29tIiwidm90I"
                     + "joiUDIuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.zxdfmq-Mo5MRWOKfyamKuSPWQF4gr8aLFU2zseFh7TA";
-    IdentityResponse ref = new IdentityResponse().ref("12435668768979");
-    when(registrationService.register(contains("abc@gmail.com"), eq("oidv")))
-            .thenReturn(null);
-    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, "oidv");
+    IdentityResponseDto ref = new IdentityResponseDto();
+    when(registrationService.register(contains("abc@gmail.com"), eq(OIDV)))
+            .thenReturn(ref);
+    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, OIDV);
     Assertions.assertThat(registered)
             .extracting(ResponseEntity::getStatusCode)
             .isEqualTo(HttpStatus.OK);
@@ -240,4 +217,17 @@ class IdentityControllerTest {
 
   }
 
+  @Test
+  void shouldReturn200ForNoVotIdentityExists() {
+    String dummy_token =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ" +
+                    "hYmNAZ21haWwuY29tIiwiaWF0IjoxNTE2MjM5MDIyfQ.hxyJgLgDMDhoxK1QTqiAB6WNYkDFfUD_az0RmFanu7g";
+    IdentityResponse ref = new IdentityResponse().ref("12435668768979");
+    when(registrationService.register(contains("abc@gmail.com"), eq(OIDV)))
+            .thenReturn(IdentityResponseDto.of(false, ref));
+    ResponseEntity<IdentityResponse> registered = controller.register(dummy_token, OIDV);
+    Assertions.assertThat(registered)
+            .extracting(ResponseEntity::getStatusCode)
+            .isEqualTo(HttpStatus.OK);
+  }
 }

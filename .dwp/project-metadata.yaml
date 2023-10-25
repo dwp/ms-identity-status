@@ -6,10 +6,10 @@ project:
   - project_id: 42626368
     component_name: ms-identity-status
 
-    version: 1-3-0
+    version: 1-5-0
 
     last_verified:
-      date: "2023-08-14"
+      date: "2023-10-25"
       name: "@liam.lagay"
 
     tags:

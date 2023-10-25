@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.gov.dwp.health</groupId>
     <artifactId>ms-identity-status</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <name>Identity Status</name>
     <description>Identity Status Service</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.15</version>
+        <version>2.7.16</version>
         <relativePath/>
     </parent>
 
@@ -24,29 +24,30 @@
         <pitest-junit5-plugin.version>1.2.0</pitest-junit5-plugin.version>
         <plugin.spotbugs.version>4.0.0</plugin.spotbugs.version>
         <pitest-maven.version>1.14.1</pitest-maven.version>
-        <owasp.version>8.3.1</owasp.version>
+        <owasp.version>8.4.0</owasp.version>
         <plugin.rest-assured-extent-report-plugin.version>1.6.0</plugin.rest-assured-extent-report-plugin.version>
-        <restassured.version>5.3.1</restassured.version>
-        <allure.version>2.22.2</allure.version>
+        <restassured.version>5.3.2</restassured.version>
+        <allure.version>2.24.0</allure.version>
         <java-faker.version>1.0.2</java-faker.version>
         <plugin.owasp.version>7.4.4</plugin.owasp.version>
         <extentreport-allure-annotation.version>1.0.2</extentreport-allure-annotation.version>
         <dwp.message-broker.version>2.12.0-cce5f733</dwp.message-broker.version>
         <dwp.encoded.log.version>2.3.0-c5d6b343</dwp.encoded.log.version>
         <dwp-meta-data-logger.version>2.0.1-c11d2fca</dwp-meta-data-logger.version>
-        <plugin.maven.jacoco.version>0.8.10</plugin.maven.jacoco.version>
-        <snakeyaml.version>2.0</snakeyaml.version>
+        <plugin.maven.jacoco.version>0.8.11</plugin.maven.jacoco.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <jackson-nullable.version>0.2.6</jackson-nullable.version>
-        <jackson-databind.version>2.15.2</jackson-databind.version>
+        <jackson-databind.version>2.15.3</jackson-databind.version>
         <openapi-codegen-maven-plugin.version>4.3.1</openapi-codegen-maven-plugin.version>
         <client.base.package.name>uk.gov.dwp.health.identity.status</client.base.package.name>
-        <swagger-annotations.version>1.6.11</swagger-annotations.version>
-        <spring-data-mongodb.version>3.4.13</spring-data-mongodb.version>
-        <aws.version>1.12.492</aws.version>
+        <swagger-annotations.version>1.6.12</swagger-annotations.version>
+        <spring-data-mongodb.version>3.4.17</spring-data-mongodb.version>
+        <aws.version>1.12.567</aws.version>
         <plugin.jsonschema2pojo-maven.version>1.2.1</plugin.jsonschema2pojo-maven.version>
         <awaitility.version>4.2.0</awaitility.version>
         <plugin.exec-maven.version>1.6.0</plugin.exec-maven.version>
-        <spring.version>5.3.28</spring.version>
+        <spring.version>5.3.30</spring.version>
+        <tomcat.version>9.0.82</tomcat.version>
         <dwp-mongo-change-stream-starter.version>3.3.0-fd73e6d4</dwp-mongo-change-stream-starter.version>
     </properties>
 
@@ -131,7 +132,7 @@
         <dependency>
             <groupId>org.modelmapper</groupId>
             <artifactId>modelmapper</artifactId>
-            <version>3.1.1</version>
+            <version>3.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -246,7 +247,7 @@
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>
-            <version>1.1.8</version>
+            <version>1.1.11</version>
         </dependency>
         <dependency>
             <groupId>de.flapdoodle.embed</groupId>

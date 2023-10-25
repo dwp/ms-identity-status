@@ -87,13 +87,29 @@ class PipIdvOutcomeMessageConsumerTest {
   }
 
   @Test
+  @DisplayName("Should not throw exception for valid vot values")
+  void handleMessageDoesNotThrowWithValidVotInput() {
+    payload = new IdentityRequestUpdateSchemaV1();
+    payload.setTimestamp(getCurrentDate());
+    payload.setIdentityId(identityId);
+    payload.setVot(IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM);
+    payload.setNino("RN000003A");
+    payload.setSubjectId("positive@dwp.gov.uk");
+    payload.setChannel(IdentityRequestUpdateSchemaV1.Channel.fromValue("oidv"));
+
+    when(identityService.createIdentity(any()))
+            .thenAnswer(invocation -> IdentityBuilder.createBuilder(invocation.getArgument(0)).build());
+    assertDoesNotThrow(() -> pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload));
+  }
+
+  @Test
   @DisplayName("Should throw exception if mandatory fields are null")
   void validateMandatoryFields() {
     IdentityRequestUpdateSchemaV1 payload = new IdentityRequestUpdateSchemaV1();
     assertThatThrownBy(() -> pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload))
         .isInstanceOf(ConstraintViolationException.class)
         .hasMessage(
-            "channel,identityId,idvOutcome,nino,subjectId,timestamp values are not supplied or not valid");
+            "channel,identityId,nino,subjectId,timestamp values are not supplied or not valid");
   }
 
   @Test
@@ -173,7 +189,6 @@ class PipIdvOutcomeMessageConsumerTest {
   }
 
   @Test
-  @Disabled("currently idv_outcome is mandatory field")
   void shouldNotPublishMessageIfVotValueIsNotP2() {
 
     payload.setIdvOutcome(null);
@@ -188,7 +203,6 @@ class PipIdvOutcomeMessageConsumerTest {
   }
 
   @Test
-  @Disabled("currently idv_outcome is mandatory field")
   void shouldPublishMessageIfVotValueIsP2() {
 
     payload.setIdvOutcome(null);
@@ -198,6 +212,7 @@ class PipIdvOutcomeMessageConsumerTest {
             .thenReturn(
                     Identity.builder()
                             .vot("P2.Cl.Cm")
+                            .nino("RN000001A")
                             .applicationID("5ed0d430716609122be7a4d8")
                             .identityId(identityId)
                             .build());

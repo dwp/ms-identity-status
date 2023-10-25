@@ -14,7 +14,6 @@ import uk.gov.dwp.health.identity.status.openapi.model.ApplicationIdDto;
 import uk.gov.dwp.health.identity.status.openapi.model.IdentityDto;
 import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
 import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
-import uk.gov.dwp.health.pip.identity.exception.ValidationException;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
 import uk.gov.dwp.health.pip.identity.service.IdentityService;
@@ -83,18 +82,10 @@ public class IdentityController implements V1Api {
 
   @Override
   public ResponseEntity<IdentityResponse> register(String token, String channel) {
+    log.debug("Encoded token: {} ", token);
     String payload = TokenUtils.decodePayload(token);
-    IdentityResponseDto responseDto;
-    try {
-      responseDto = identityApiService.register(payload, channel);
-    } catch (ValidationException e) {
-      return ResponseEntity.badRequest().build();
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().build();
-    }
-    if (responseDto == null) {
-      return ResponseEntity.ok().build();
-    }
+    IdentityResponseDto responseDto = identityApiService.register(payload, channel);
+    log.debug("Decoded token: {} ", payload);
     if (responseDto.isCreated()) {
       return ResponseEntity.status(HttpStatus.CREATED).body(responseDto.getIdentityResponse());
     }
