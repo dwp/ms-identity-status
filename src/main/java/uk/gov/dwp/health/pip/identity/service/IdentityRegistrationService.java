@@ -55,6 +55,7 @@ public class IdentityRegistrationService {
     }
     final Optional<Identity> subjectRecord = repository.findBySubjectId(tokenPayload.getSub());
     if (shouldPublishGuidEvent(tokenPayload.getGuid(), subjectRecord)) {
+      log.info("GUID Present for token - publishing to SNS topic");
       guidEventPublisher.publish(tokenPayload, loggerContext.get(Constants.CORRELATION_ID_LOG_KEY));
       return null;
     } else {
@@ -64,10 +65,12 @@ public class IdentityRegistrationService {
         return getIdentityResponseDto(
                 identity.getId(), identity.getApplicationID(), identity.getSubjectId(), false);
       } else if (tokenPayload.getVot() == null) {
+        log.error("No VOT in token for DTH route. Throwing exception");
         throw new IdentityNotFoundException("No VOT in token and no Identity found for sub");
       }
 
       if (accountExistsForEmail(sub)) {
+        log.error("PIP Account detected for DTH route. Throwing exception");
         throw new ConflictException("Account already exists for email");
       }
 

@@ -32,6 +32,7 @@ public class IdentityServiceImpl implements IdentityService {
     final Optional<Identity> ninoRecord = getIdentityByNino(request.getNino());
 
     if (ninoRecord.isPresent()) {
+      log.info("Record found by nino. Updating record");
       Identity recordToUpdate = ninoRecord.get();
       if (isKeyInformationSame(recordToUpdate, request)) {
         throw new NoKeyChangesToExistingRecordException(
@@ -43,6 +44,7 @@ public class IdentityServiceImpl implements IdentityService {
 
     final Optional<Identity> subjectRecord = getIdentityBySubjectId(request.getSubjectId());
     if (subjectRecord.isPresent()) {
+      log.info("Record found by subject. Updating record");
       Identity recordToUpdate = subjectRecord.get();
       if (isKeyInformationSame(recordToUpdate, request)) {
         throw new NoKeyChangesToExistingRecordException(
@@ -52,6 +54,7 @@ public class IdentityServiceImpl implements IdentityService {
       return updateExistingSubjectRecord(request, recordToUpdate);
     }
 
+    log.info("No existing record found. Creating new record");
     Identity.IdentityBuilder builder = IdentityBuilder.createBuilder(request);
     processApplicationId(request, builder);
     return saveIdentity(builder);
@@ -114,8 +117,10 @@ public class IdentityServiceImpl implements IdentityService {
     var vot = request.getVot();
     var idvOutcome = request.getIdvOutcome();
     if (vot != null) {
+      log.info("Building record with VOT set");
       builder.vot(vot.value());
     } else {
+      log.info("Building record with idvStatus set");
       builder.idvStatus(idvOutcome.toString());
     }
   }

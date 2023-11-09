@@ -1,19 +1,13 @@
 $schema: https://gitlab.com/dwp/secure-development/schema/project-metadata/-/raw/v1.0.0/schema/project-metadata.json
-
 schema_version: 1.0.0
-
 project:
   - project_id: 42626368
     component_name: ms-identity-status
-
-    version: 1-5-0
-
+    version: 1.5.1
     last_verified:
-      date: "2023-10-25"
-      name: "@liam.lagay"
-
+      date: "2023-11-06"
+      name: "@kevin.monteiro"
     tags:
       payments: false
       personally_identifying_information: true
-
     cmdb_id: 1d3e07e81b7d14500b3732a0dc4bcbf4

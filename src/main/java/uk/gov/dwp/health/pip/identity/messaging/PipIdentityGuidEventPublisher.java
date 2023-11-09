@@ -28,8 +28,10 @@ public class PipIdentityGuidEventPublisher {
     payload.put("identity_id", correlationId);
     payload.put("guid", tokenPayload.getGuid());
     if (tokenPayload.getVot() == null) {
+      log.info("Building token for existing PIP cred user");
       payload.put("idv_outcome", "verified");
     } else {
+      log.info("Building token for DTH user");
       payload.put("vot", tokenPayload.getVot());
     }
 
