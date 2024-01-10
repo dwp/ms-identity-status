@@ -14,6 +14,7 @@
       file name: bc-fips-1.0.2.3.jar
       ]]></notes>
         <cve>CVE-2022-45146</cve>
+        <cve>CVE-2023-33202</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -29,5 +30,12 @@
    ]]></notes>
         <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
         <vulnerabilityName>CVE-2023-44487</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: logback-core-1.2.12.jar
+   ]]></notes>
+        <vulnerabilityName>CVE-2023-6378</vulnerabilityName>
+        <vulnerabilityName>CVE-2023-6481</vulnerabilityName>
     </suppress>
 </suppressions>
