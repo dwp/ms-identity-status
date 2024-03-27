@@ -6,7 +6,7 @@ variables:
   PRODUCT: "pip-apply"
   # Config
   BUILD_TYPE: "MAVEN"
-  MAVEN_IMAGE: "maven:3-jdk-11"
+  MAVEN_IMAGE: "maven:3.8.3-openjdk-17"
   MVN_OPTS: "-DLOG_LEVEL=INFO"
   MVN_CLI_OPTS: "--batch-mode"
   PIP_APPLY_MOCKS_NAME: pip-apply-mocks

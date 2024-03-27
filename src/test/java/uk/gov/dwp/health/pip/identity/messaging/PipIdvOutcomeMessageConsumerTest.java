@@ -22,9 +22,9 @@ import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
 import uk.gov.dwp.health.pip.identity.service.IdentityService;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityBuilder;
 
-import javax.validation.ConstraintViolationException;
-import javax.validation.Validation;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;

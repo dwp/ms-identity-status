@@ -8,15 +8,15 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
 import uk.gov.dwp.health.integration.message.Constants;
-import uk.gov.dwp.health.logging.LoggerContext;
+import uk.gov.dwp.health.monitoring.logging.LoggerContext;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.exception.AccountNotFoundException;
 import uk.gov.dwp.health.pip.identity.exception.ConflictException;
@@ -27,6 +27,7 @@ import uk.gov.dwp.health.pip.identity.model.AccountDetailsResponse;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.model.TokenPayload;
 import uk.gov.dwp.health.pip.identity.repository.IdentityRepository;
+import uk.gov.dwp.health.pip.identity.repository.RegistrationRepository;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityBuilder;
 import uk.gov.dwp.health.pip.identity.webclient.AccountManagerWebClient;
 import uk.gov.dwp.health.pip.identity.webclient.ApplicationManagerWebClient;
@@ -43,9 +44,10 @@ public class IdentityRegistrationService {
   private final Validator validator;
   private final LoggerContext loggerContext;
   private final PipIdentityGuidEventPublisher guidEventPublisher;
+  private final RegistrationRepository registrationRepository;
 
   public IdentityResponseDto register(String payload, String channel) {
-    
+
     TokenPayload tokenPayload = parsePayload(payload);
     Set<ConstraintViolation<TokenPayload>> violations = validator.validate(tokenPayload);
 
@@ -147,7 +149,12 @@ public class IdentityRegistrationService {
             .channel(channel)
             .subjectId(tokenPayload.getSub())
             .build();
-    return repository.save(identity);
+
+    Identity savedIdentity = repository.save(identity);
+
+    incrementRegistrationCount();
+
+    return savedIdentity;
   }
 
   private boolean shouldPublishGuidEvent(String guid, Optional<Identity> identity) {
@@ -162,5 +169,13 @@ public class IdentityRegistrationService {
     } catch (AccountNotFoundException e) {
       return false;
     }
+  }
+
+  private void incrementRegistrationCount() {
+    log.info("About to increment registration count");
+
+    registrationRepository.incrementRegistrationCount();
+
+    log.info("Incremented registration count");
   }
 }

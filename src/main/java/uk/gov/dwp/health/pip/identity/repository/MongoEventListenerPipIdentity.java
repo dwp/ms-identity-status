@@ -2,6 +2,7 @@ package uk.gov.dwp.health.pip.identity.repository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
@@ -12,6 +13,7 @@ import uk.gov.dwp.health.pip.identity.entity.Identity;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnExpression("${feature.data.changestream.enabled:false}")
 public class MongoEventListenerPipIdentity extends AbstractMongoEventListener<Identity> {
   private final WatcherConfigProperties watcherConfigProperties;
 

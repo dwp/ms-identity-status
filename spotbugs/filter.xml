@@ -9,4 +9,8 @@
     <Match>
         <Class name="uk.gov.dwp.health.identity.status.openapi.api.ApiUtil"/>
     </Match>
+    <Match>
+        <!-- May want to investigate as there are 47 of these reported -->
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

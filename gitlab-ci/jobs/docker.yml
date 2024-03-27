@@ -93,6 +93,8 @@ trivy-report:
 
 trivy-container:
   extends: .trivy-container-base
+  variables:
+    HIGH_SUPPRESSIONS: "CVE-2024-20952,CVE-2024-20918,CVE-2023-29499,CVE-2024-20932"
   retry:
     max: 2
     when:

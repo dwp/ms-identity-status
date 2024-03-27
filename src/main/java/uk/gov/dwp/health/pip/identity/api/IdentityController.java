@@ -17,8 +17,10 @@ import uk.gov.dwp.health.identity.status.openapi.model.IdvDto;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
 import uk.gov.dwp.health.pip.identity.service.IdentityService;
+import uk.gov.dwp.health.pip.identity.service.RegistrationsLimiterGetter;
 import uk.gov.dwp.health.pip.identity.utils.IdentityStatusCalculator;
 import uk.gov.dwp.health.pip.identity.utils.TokenUtils;
+import uk.gov.dwp.health.identity.status.openapi.model.RegistrationsLimiterDto;
 
 @Slf4j
 @Controller
@@ -28,6 +30,7 @@ public class IdentityController implements V1Api {
   private static final String EMAIL_REGEX = "(^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$)";
   private final IdentityService identityService;
   private final IdentityRegistrationService identityApiService;
+  private final RegistrationsLimiterGetter registrationsLimiterGetter;
 
   @Override
   public ResponseEntity<IdvDto> getIdentityByNino(String nino) {
@@ -84,12 +87,18 @@ public class IdentityController implements V1Api {
   public ResponseEntity<IdentityResponse> register(String token, String channel) {
     log.debug("Encoded token: {} ", token);
     String payload = TokenUtils.decodePayload(token);
-    IdentityResponseDto responseDto = identityApiService.register(payload, channel);
     log.debug("Decoded token: {} ", payload);
+    IdentityResponseDto responseDto = identityApiService.register(payload, channel);
     if (responseDto.isCreated()) {
       return ResponseEntity.status(HttpStatus.CREATED).body(responseDto.getIdentityResponse());
     }
     return ResponseEntity.ok().body(responseDto.getIdentityResponse());
+  }
+
+  @Override
+  public ResponseEntity<RegistrationsLimiterDto> getLimiter() {
+    var registrationsLimiterDto = registrationsLimiterGetter.getRegistrationsLimiter();
+    return ResponseEntity.status(HttpStatus.OK).body(registrationsLimiterDto);
   }
 
   @Override

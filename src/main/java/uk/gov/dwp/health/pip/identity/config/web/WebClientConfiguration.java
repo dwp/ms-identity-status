@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
-import uk.gov.dwp.health.logging.LoggerContext;
+import uk.gov.dwp.health.monitoring.logging.LoggerContext;
 
 @Configuration
 public class WebClientConfiguration {

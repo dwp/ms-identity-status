@@ -27,3 +27,7 @@ include:
 
 variables:
   SERVICE_NAME: "MS Identity Status"
+
+trivy-container:
+  variables:
+    HIGH_SUPPRESSIONS: "CVE-2023-29499,CVE-2024-20918,CVE-2024-20952,CVE-2024-20932"

@@ -9,6 +9,8 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 
+import java.util.UUID;
+
 import static io.restassured.RestAssured.given;
 import static uk.gov.dwp.health.pip.identity.utils.EnvironmentUtil.getEnv;
 
@@ -30,6 +32,26 @@ public class ApiTest {
 
   protected Response postRequest(String path, Object bodyPayload) {
     return given().spec(requestSpec).body(bodyPayload).when().post(path);
+  }
+
+  protected Response postRequestWithHeader(String path, Object bodyPayload, String headerName, String headerValue) {
+
+    final UUID correlation = UUID.randomUUID();
+
+
+    RequestSpecification requestSpecWithHeaders =
+            new RequestSpecBuilder()
+                    .setContentType(ContentType.JSON)
+                    .addFilter(new AllureRestAssured())
+                    .addHeader(headerName, headerValue)
+                    .addHeader("x-dwp-correlation-id", correlation.toString())
+                    .build();
+
+    return given().spec(requestSpecWithHeaders).body(bodyPayload).when().post(path);
+  }
+
+  protected Response getRequest(String path) {
+    return given().spec(requestSpec).when().get(path);
   }
 
   protected Response getRequestWithHeader(String path, String headerName, String headerValue) {

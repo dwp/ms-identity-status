@@ -6,14 +6,12 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-import javax.validation.Validation;
-import javax.validation.Validator;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
 import uk.gov.dwp.health.integration.message.Constants;
-import uk.gov.dwp.health.logging.LoggerContext;
+import uk.gov.dwp.health.monitoring.logging.LoggerContext;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.exception.AccountNotFoundException;
 import uk.gov.dwp.health.pip.identity.exception.ConflictException;
@@ -34,6 +32,7 @@ import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.model.TokenPayload;
 import uk.gov.dwp.health.pip.identity.repository.IdentityRepository;
+import uk.gov.dwp.health.pip.identity.repository.RegistrationRepository;
 import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
 import uk.gov.dwp.health.pip.identity.webclient.AccountManagerWebClient;
 import uk.gov.dwp.health.pip.identity.webclient.ApplicationManagerWebClient;
@@ -48,6 +47,7 @@ class IdentityRegistrationServiceTest {
   @Mock private ApplicationManagerWebClient applicationManagerWebClient;
   @Mock private AccountManagerWebClient accountManagerWebClient;
   @Mock private PipIdentityGuidEventPublisher guidEventPublisher;
+  @Mock private RegistrationRepository registrationRepository;
 
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   private final ObjectMapper mapper = new ObjectMapper();
@@ -59,13 +59,15 @@ class IdentityRegistrationServiceTest {
   void setUp() {
     identityApiService =
         new IdentityRegistrationService(
-            repository,
-            applicationManagerWebClient,
-            accountManagerWebClient,
-            mapper,
-            validator,
-            loggerContext,
-            guidEventPublisher);
+                repository,
+                applicationManagerWebClient,
+                accountManagerWebClient,
+                mapper,
+                validator,
+                loggerContext,
+                guidEventPublisher,
+                registrationRepository
+        );
   }
 
   @Test
@@ -78,7 +80,9 @@ class IdentityRegistrationServiceTest {
     IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
 
     verify(repository, times(1)).save(captor.capture());
+    verify(registrationRepository, times(1)).incrementRegistrationCount();
     verify(guidEventPublisher, never()).publish(any(), any());
+
     assertThat(captor)
         .satisfies(
             arg -> {
@@ -259,7 +263,7 @@ class IdentityRegistrationServiceTest {
 
         verify(guidEventPublisher, atMostOnce())
                 .publish(any(TokenPayload.class), eq(CORRELATION_ID.toString()));
-        
+
     }
 
     @Test
@@ -274,7 +278,7 @@ class IdentityRegistrationServiceTest {
 
         verify(guidEventPublisher, never())
                 .publish(any(TokenPayload.class), eq(CORRELATION_ID.toString()));
-        
+
     }
 
   @Test
@@ -353,7 +357,7 @@ class IdentityRegistrationServiceTest {
         verify(repository, times(1)).save(captor.capture());
         verify(guidEventPublisher, never()).publish(any(), any());
     }
-        
+
     @Test
     void shouldReturnIdentityWhenNoVotPassedAndIdentityExists() {
         String payload = "{\"sub\": \"test.user@dwp.gov.uk\" }";
@@ -362,7 +366,7 @@ class IdentityRegistrationServiceTest {
                         .subjectId(EMAIL).id("1234")
                         .applicationID("4567")
                         .build()));
-        
+
         IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
 
         verify(repository, never()).save(captor.capture());

@@ -9,12 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
-import uk.gov.dwp.health.logging.LoggerContext;
+import uk.gov.dwp.health.monitoring.logging.LoggerContext;
 import uk.gov.dwp.health.pip.identity.exception.ConflictException;
 import uk.gov.dwp.health.pip.identity.exception.GenericRuntimeException;
 
@@ -32,17 +33,17 @@ public class ReactorWebClient {
 
   private static Function<ClientResponse, Mono<? extends Throwable>> convertToServiceException() {
     return response ->
-        error(new GenericRuntimeException("Server error: " + response.rawStatusCode()));
+        error(new GenericRuntimeException("Server error: " + response.statusCode().value()));
   }
 
-  private static Predicate<HttpStatus> isConflict(String path) {
+  private static Predicate<HttpStatusCode> isConflict(String path) {
     return httpStatus -> {
       log.info("Got response status {}  from {}", httpStatus, path);
       return httpStatus == HttpStatus.CONFLICT;
     };
   }
 
-  private static Predicate<HttpStatus> is5xx(String path) {
+  private static Predicate<HttpStatusCode> is5xx(String path) {
     return httpStatus -> {
       log.info("Got response status {}  from {}", httpStatus, path);
       return httpStatus.is5xxServerError();

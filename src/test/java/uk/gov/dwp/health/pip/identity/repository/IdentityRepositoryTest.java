@@ -14,12 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 
 @DataMongoTest
 @ExtendWith(SpringExtension.class)
 @DirtiesContext
+@TestPropertySource(properties = {"de.flapdoodle.mongodb.embedded.version =5.0.5"})
 class IdentityRepositoryTest {
 
   @Autowired private IdentityRepository repository;

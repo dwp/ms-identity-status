@@ -16,5 +16,7 @@ public class UrlBuilderUtil {
     return baseURI + "/v1/identity";
   }
 
+  public static String getLimiterUrl() { return baseURI + "/v1/identity/limiter"; }
+
   public static String updateApplicationIdUrl(String identityId) { return baseURI + "/v1/identity/" + identityId; }
 }
