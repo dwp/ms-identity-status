@@ -3,20 +3,20 @@ version: "2.1"
 services:
 
   localstack:
-    image: localstack/localstack-full:1.0.1@sha256:b17f45c1cf5ad5e55bb5c53f0c3af31c440a4116a4b3d788bc3cb0a415f59d1a
+    image: localstack/localstack:3.4.0@sha256:54fcf172f6ff70909e1e26652c3bb4587282890aff0d02c20aa7695469476ac0
     environment:
       AWS_DEFAULT_REGION: eu-west-2
       SERVICES: sns, sqs, kms
-      HOSTNAME_EXTERNAL: localstack
+      LOCALSTACK_HOST: localstack
     volumes:
-      - ./config/localstack:/docker-entrypoint-initaws.d
+      - ./config/localstack:/etc/localstack/init/ready.d
     healthcheck:
       test: [ "CMD", "curl", "http://localhost:4566" ]
     ports:
       - "4566:4566"
 
   mongo:
-    image: mongo:5.0@sha256:ee514514754ffdb13597a894bdae90fdabbe4c0926bf96b40a84d1233782bcc1
+    image: mongo:5.0@sha256:425e4c88ee3213fbd92c57565295a9fa7b5eb510744df5e9bcb8a003db410dff
     expose:
       - 27017
     ports:
@@ -75,7 +75,6 @@ services:
       - FEATURE_DATA_CHANGESTREAM_ENABLED=false
       - SCHEDULE_RESET_REGISTRATIONS_COUNT=0-59/10 * * * * *
       - APPLICATION_ACCOUNT_REGISTRATIONS_LIMIT=10
-
     depends_on:
       localstack:
         condition: service_healthy
@@ -124,11 +123,8 @@ services:
       DEAD_LETTER_QUEUE_URL: http://localstack:4566/000000000000/pip_idv_outcome_dlq
       RESPONSE_TOPIC_ARN: arn:aws:sns:eu-west-2:000000000000:update_pipcs_idv_topic
       RESPONSE_QUEUE_URL: http://localstack:4566/000000000000/update_pipcs_idv_queue
-
     volumes:
       - .:/usr/src
       - ${MVN_M2}:/root/.m2
-      - ${MVN_SETTINGS_FILE_SAAS}:/root/.m2/settings.xml
+      - ${MVN_SETTINGS_FILE}:/root/.m2/settings.xml
       - ./target/test/reports:/usr/src/target/test-reports
-
-

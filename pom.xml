@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.gov.dwp.health</groupId>
     <artifactId>ms-identity-status</artifactId>
-    <version>1.8.0</version>
+    <version>1.8.1</version>
     <name>Identity Status</name>
     <description>Identity Status Service</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.5</version>
         <relativePath />
     </parent>
 
@@ -20,39 +20,37 @@
         <java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <pitest-junit5-plugin.version>1.2.0</pitest-junit5-plugin.version>
-        <plugin.spotbugs.version>4.7.3.5</plugin.spotbugs.version>
-        <spotbugs.version>4.7.3</spotbugs.version>
-        <pitest-maven.version>1.15.1</pitest-maven.version>
-        <owasp.version>8.4.0</owasp.version>
-        <plugin.rest-assured-extent-report-plugin.version>1.6.0</plugin.rest-assured-extent-report-plugin.version>
-        <restassured.version>5.3.2</restassured.version>
-        <allure.version>2.24.0</allure.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <pitest-junit5-plugin.version>1.2.1</pitest-junit5-plugin.version>
+        <plugin.spotbugs.version>4.8.3.1</plugin.spotbugs.version>
+        <spotbugs.version>4.8.3</spotbugs.version>
+        <pitest-maven.version>1.16.1</pitest-maven.version>
+        <plugin.rest-assured-extent-report-plugin.version>2.2.0</plugin.rest-assured-extent-report-plugin.version>
+        <restassured.version>5.4.0</restassured.version>
+        <allure.version>2.26.0</allure.version>
         <java-faker.version>1.0.2</java-faker.version>
-        <plugin.owasp.version>7.4.4</plugin.owasp.version>
+        <dependency-check-maven.version>9.1.0</dependency-check-maven.version>
         <extentreport-allure-annotation.version>1.0.2</extentreport-allure-annotation.version>
-        <dwp.message-broker.version>3.3.0-5a5539ad</dwp.message-broker.version>
+        <dwp.message-broker.version>3.5.0-16e40088</dwp.message-broker.version>
         <dwp.encoded.log.version>2.3.0-c5d6b343</dwp.encoded.log.version>
         <dwp-meta-data-logger.version>2.0.0-f17eb705</dwp-meta-data-logger.version>
         <plugin.maven.jacoco.version>0.8.11</plugin.maven.jacoco.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <jackson-nullable.version>0.2.6</jackson-nullable.version>
-        <jackson-databind.version>2.16.0</jackson-databind.version>
-        <openapi-codegen-maven-plugin.version>6.6.0</openapi-codegen-maven-plugin.version>
+        <jackson-databind.version>2.17.0</jackson-databind.version>
+        <openapi-codegen-maven-plugin.version>7.4.0</openapi-codegen-maven-plugin.version>
         <client.base.package.name>uk.gov.dwp.health.identity.status</client.base.package.name>
-        <spring-data-mongodb.version>4.2.2</spring-data-mongodb.version>
-        <aws.version>1.12.567</aws.version>
+        <spring-data-mongodb.version>4.2.4</spring-data-mongodb.version>
         <plugin.jsonschema2pojo-maven.version>1.2.1</plugin.jsonschema2pojo-maven.version>
-        <awaitility.version>4.2.0</awaitility.version>
-        <plugin.exec-maven.version>1.6.0</plugin.exec-maven.version>
+        <awaitility.version>4.2.1</awaitility.version>
+        <plugin.exec-maven.version>3.2.0</plugin.exec-maven.version>
         <dwp-mongo-change-stream-starter.version>4.2.0-359f3f54</dwp-mongo-change-stream-starter.version>
         <opentelemetry.version>2.0.0-alpha</opentelemetry.version>
-        <opentelemetry-bom.version>1.34.1</opentelemetry-bom.version>
-        <flapdoodle.version>4.6.2</flapdoodle.version>
-        <swagger-annotations.version>2.2.20</swagger-annotations.version>
-        <swagger-parser.version>2.1.20</swagger-parser.version>
-        <bc-fips.version>1.0.2.3</bc-fips.version>
+        <opentelemetry-bom.version>1.36.0</opentelemetry-bom.version>
+        <flapdoodle.version>4.11.0</flapdoodle.version>
+        <swagger-annotations.version>2.2.21</swagger-annotations.version>
+        <swagger-parser.version>2.1.21</swagger-parser.version>
+        <bc-fips.version>1.0.2.5</bc-fips.version>
     </properties>
 
     <dependencies>
@@ -81,10 +79,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson-databind.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         <dependency>
             <groupId>uk.gov.dwp.health</groupId>
@@ -220,7 +214,6 @@
             <artifactId>bc-fips</artifactId>
             <version>${bc-fips.version}</version>
         </dependency>
-
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>json-schema-validator</artifactId>
@@ -269,7 +262,7 @@
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>
-            <version>1.1.13</version>
+            <version>1.1.17</version>
         </dependency>
         <dependency>
             <artifactId>de.flapdoodle.embed.mongo.spring30x</artifactId>
@@ -280,13 +273,6 @@
     </dependencies>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-bom</artifactId>
-                <version>${aws.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
@@ -340,18 +326,22 @@
                 <artifactId>pitest-maven</artifactId>
                 <version>${pitest-maven.version}</version>
                 <configuration>
-                    <threads>5</threads>
+                    <threads>8</threads>
                     <targetClasses>
                         <param>uk.gov.dwp.health.pip.identity.*</param>
                     </targetClasses>
                     <excludedClasses>
                         <excludedClass>uk.gov.dwp.health.identity.openapi.*</excludedClass>
+                        <param>**.*IT</param>
                     </excludedClasses>
                     <targetTests>
                         <param>uk.gov.dwp.health.pip.identity.*</param>
                     </targetTests>
+                    <excludedTestClasses>
+                        <class>*.IdentityControllerAdviseTest</class>
+                        <class>uk.gov.dwp.health.pip.identity.repository.*</class>
+                    </excludedTestClasses>
                 </configuration>
-
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
@@ -363,10 +353,9 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${owasp.version}</version>
+                <version>${dependency-check-maven.version}</version>
                 <configuration>
                     <suppressionFile>src/main/resources/DependencySuppression.xml</suppressionFile>
-                    <cveValidForHours>12</cveValidForHours>
                     <failBuildOnCVSS>4</failBuildOnCVSS>
                 </configuration>
                 <executions>
@@ -527,7 +516,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>${plugin.owasp.version}</version>
+                        <version>${dependency-check-maven.version}</version>
                         <configuration>
                             <skip>true</skip>
                         </configuration>
@@ -608,6 +597,47 @@
                             <sparkHideLogEvents>true</sparkHideLogEvents>
                             <sparkGenerate>true</sparkGenerate>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>mutation-test</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>${pitest-maven.version}</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>${pitest-junit5-plugin.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <timeoutConstant>12000</timeoutConstant>
+                            <withHistory>true</withHistory>
+                            <threads>8</threads>
+                            <excludedTestClasses>
+                                <param>**.*IT</param>
+                            </excludedTestClasses>
+                            <excludedTestClasses>
+                                *.IdentityControllerAdviseTest
+                            </excludedTestClasses>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>mutationCoverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

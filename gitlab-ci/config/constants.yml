@@ -7,7 +7,7 @@ variables:
   # Config
   BUILD_TYPE: "MAVEN"
   MAVEN_IMAGE: "maven:3.8.3-openjdk-17"
-  MVN_OPTS: "-DLOG_LEVEL=INFO"
+  MVN_OPTS: "-DLOG_LEVEL=INFO -Dde.flapdoodle.os.override=Linux|X86_64|Oracle|Oracle_8"
   MVN_CLI_OPTS: "--batch-mode"
   PIP_APPLY_MOCKS_NAME: pip-apply-mocks
   PIP_APPLY_MOCKS_BRANCH: develop

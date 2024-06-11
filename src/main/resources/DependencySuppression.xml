@@ -1,35 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
-        <notes><![CDATA[
-      netty-codec-http-4.1.107.Final.jar: 
-      ]]></notes>
-        <cve>CVE-2024-29025</cve>
+        <notes><![CDATA[file name: aws-java-sdk-s3-1.11.792.jar]]></notes>
+        <cve>CVE-2022-31159</cve>
     </suppress>
     <suppress>
-        <notes><![CDATA[
-      <groupId>uk.gov.dwp.health</groupId>
-      <artifactId>data-cryptography</artifactId>
-      file name: bc-fips-1.0.2.3.jar
-      ]]></notes>
+        <notes><![CDATA[file name: bc-fips-1.0.2.5.jar]]></notes>
         <cve>CVE-2023-33202</cve>
-        <cve>CVE-2022-45146</cve>
     </suppress>
     <suppress>
-        <notes><![CDATA[
-      file name: swagger-parser-safe-url-resolver-2.1.20.jar:
-      ]]></notes>
-        <cve>CVE-2022-0722</cve>
-        <cve>CVE-2022-2218</cve>
-        <cve>CVE-2022-2900</cve>
-        <cve>CVE-2022-2216</cve>
-        <cve>CVE-2022-2217</cve>
-        <cve>CVE-2022-3224</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: ion-java-1.5.1.jar
-   ]]></notes>
+        <notes><![CDATA[file name: ion-java-1.5.1.jar]]></notes>
         <cve>CVE-2024-21634</cve>
     </suppress>
 </suppressions>
