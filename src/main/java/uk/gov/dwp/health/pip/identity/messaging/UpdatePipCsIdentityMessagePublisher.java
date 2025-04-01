@@ -34,6 +34,6 @@ public class UpdatePipCsIdentityMessagePublisher {
       log.info("Error publishing update PIP CS IDV event: {}", ex.getMessage());
       throw new GenericRuntimeException(ex.getMessage());
     }
-    log.info("Published update PIP CS IDV event");
+    log.info("Published update PIP CS IDV event to PIPCS-GW");
   }
 }

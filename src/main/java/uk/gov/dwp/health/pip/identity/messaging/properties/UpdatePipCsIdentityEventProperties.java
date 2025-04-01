@@ -15,11 +15,11 @@ public class UpdatePipCsIdentityEventProperties {
 
   @NotNull(message = "pip-cs-identity message topic can not be null")
   @NotBlank(message = "pip-cs-identity message topic can not be blank")
-  @Value("${uk.gov.dwp.health.outbound.topic}")
+  @Value("${uk.gov.dwp.health.pipcs.outbound.topic}")
   private String topicName;
 
   @NotNull(message = "Identity response message routing key can not be null")
   @NotBlank(message = "Identity response message routing key can not be blank")
-  @Value("${uk.gov.dwp.health.outbound.routing.key.identity.response}")
+  @Value("${uk.gov.dwp.health.pipcs.outbound.routing.key}")
   private String routingKeyIdentityResponse;
 }

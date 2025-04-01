@@ -1,56 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.gov.dwp.health</groupId>
     <artifactId>ms-identity-status</artifactId>
-    <version>1.8.1</version>
+    <version>1.18.0</version>
     <name>Identity Status</name>
     <description>Identity Status Service</description>
-
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version>
-        <relativePath />
+        <version>3.4.4</version>
+        <relativePath/>
     </parent>
 
     <properties>
         <java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <pitest-junit5-plugin.version>1.2.1</pitest-junit5-plugin.version>
-        <plugin.spotbugs.version>4.8.3.1</plugin.spotbugs.version>
-        <spotbugs.version>4.8.3</spotbugs.version>
-        <pitest-maven.version>1.16.1</pitest-maven.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <pitest-junit5-plugin.version>1.2.2</pitest-junit5-plugin.version>
+        <plugin.spotbugs.version>4.9.2.0</plugin.spotbugs.version>
+        <spotbugs.version>4.9.2</spotbugs.version>
+        <pitest-maven.version>1.18.2</pitest-maven.version>
         <plugin.rest-assured-extent-report-plugin.version>2.2.0</plugin.rest-assured-extent-report-plugin.version>
-        <restassured.version>5.4.0</restassured.version>
-        <allure.version>2.26.0</allure.version>
+        <restassured.version>5.5.1</restassured.version>
+        <allure.version>2.29.1</allure.version>
         <java-faker.version>1.0.2</java-faker.version>
-        <dependency-check-maven.version>9.1.0</dependency-check-maven.version>
+        <dependency-check-maven.version>12.1.0</dependency-check-maven.version>
         <extentreport-allure-annotation.version>1.0.2</extentreport-allure-annotation.version>
-        <dwp.message-broker.version>3.5.0-16e40088</dwp.message-broker.version>
-        <dwp.encoded.log.version>2.3.0-c5d6b343</dwp.encoded.log.version>
-        <dwp-meta-data-logger.version>2.0.0-f17eb705</dwp-meta-data-logger.version>
-        <plugin.maven.jacoco.version>0.8.11</plugin.maven.jacoco.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
+        <dwp.message-broker.version>3.10.0-253f3e8b</dwp.message-broker.version>
+        <modelmapper.version>3.2.2</modelmapper.version>
+        <dwp.encoded.log.version>3.0.0-dfda47f2</dwp.encoded.log.version>
+        <dwp-meta-data-logger.version>3.0.0-ca1c3364</dwp-meta-data-logger.version>
+        <plugin.maven.jacoco.version>0.8.12</plugin.maven.jacoco.version>
+        <snakeyaml.version>2.4</snakeyaml.version>
         <jackson-nullable.version>0.2.6</jackson-nullable.version>
-        <jackson-databind.version>2.17.0</jackson-databind.version>
-        <openapi-codegen-maven-plugin.version>7.4.0</openapi-codegen-maven-plugin.version>
+        <jackson-databind.version>2.18.3</jackson-databind.version>
+        <openapi-codegen-maven-plugin.version>7.12.0</openapi-codegen-maven-plugin.version>
         <client.base.package.name>uk.gov.dwp.health.identity.status</client.base.package.name>
-        <spring-data-mongodb.version>4.2.4</spring-data-mongodb.version>
-        <plugin.jsonschema2pojo-maven.version>1.2.1</plugin.jsonschema2pojo-maven.version>
-        <awaitility.version>4.2.1</awaitility.version>
-        <plugin.exec-maven.version>3.2.0</plugin.exec-maven.version>
-        <dwp-mongo-change-stream-starter.version>4.2.0-359f3f54</dwp-mongo-change-stream-starter.version>
-        <opentelemetry.version>2.0.0-alpha</opentelemetry.version>
+        <coordinator.client.base.package.name>uk.gov.dwp.health.coordinator</coordinator.client.base.package.name>
+        <plugin.jsonschema2pojo-maven.version>1.2.2</plugin.jsonschema2pojo-maven.version>
+        <awaitility.version>4.3.0</awaitility.version>
+        <plugin.exec-maven.version>3.5.0</plugin.exec-maven.version>
+        <dwp-mongo-change-stream-starter.version>4.2.0-25280f8d</dwp-mongo-change-stream-starter.version>
+        <opentelemetry.version>2.14.0-alpha</opentelemetry.version>
         <opentelemetry-bom.version>1.36.0</opentelemetry-bom.version>
         <flapdoodle.version>4.11.0</flapdoodle.version>
-        <swagger-annotations.version>2.2.21</swagger-annotations.version>
-        <swagger-parser.version>2.1.21</swagger-parser.version>
-        <bc-fips.version>1.0.2.5</bc-fips.version>
+        <swagger-annotations.version>2.2.29</swagger-annotations.version>
+        <swagger-parser.version>2.1.25</swagger-parser.version>
+        <bc-fips.version>2.1.0</bc-fips.version>
+        <apache.http.client.version>5.5-alpha1</apache.http.client.version>
+        <amazon.sdk.version>1.12.782</amazon.sdk.version>
+        <localnetty.version>1.3.0-M1</localnetty.version>
+        <netty.version>4.1.118.Final</netty.version>
     </properties>
 
     <dependencies>
@@ -114,11 +118,31 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-mongodb</artifactId>
-            <version>${spring-data-mongodb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${apache.http.client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-expression</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
         <dependency>
             <groupId>uk.gov.dwp.health.integration</groupId>
@@ -126,14 +150,9 @@
             <version>${dwp.message-broker.version}</version>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.modelmapper</groupId>
             <artifactId>modelmapper</artifactId>
-            <version>3.2.0</version>
+            <version>${modelmapper.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -262,13 +281,18 @@
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>
-            <version>1.1.17</version>
+            <version>${localnetty.version}</version>
         </dependency>
         <dependency>
             <artifactId>de.flapdoodle.embed.mongo.spring30x</artifactId>
             <groupId>de.flapdoodle.embed</groupId>
             <version>${flapdoodle.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ssm</artifactId>
+            <version>${amazon.sdk.version}</version>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -279,6 +303,14 @@
                 <version>${opentelemetry-bom.version}</version>
                 <type>pom</type>
                 <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-tx</artifactId>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -408,11 +440,13 @@
                 </executions>
                 <configuration>
                     <excludes>
+                        <exclude>**uk/gov/dwp/health/coordinator/**</exclude>
                         <exclude>**uk/gov/dwp/health/identity/status/openapi/**</exclude>
                         <exclude>**uk/gov/dwp/health/pip/identity/entity/**</exclude>
                         <exclude>**uk/gov/dwp/health/pip/identity/messaging/**</exclude>
                         <exclude>**uk/gov/dwp/health/pip/identity/config/**</exclude>
                         <exclude>**uk/gov/dwp/health/pip/identity/model/*</exclude>
+                        <exclude>**uk/gov/dwp/health/pip/identity/constants/*</exclude>
                         <exclude>**uk/gov/dwp/health/pip/identity/*</exclude>
                     </excludes>
                 </configuration>
@@ -424,6 +458,7 @@
                 <version>${openapi-codegen-maven-plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>identity ms v1</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
@@ -444,6 +479,60 @@
                                 <java8>true</java8>
                                 <useBeanValidation>true</useBeanValidation>
                                 <booleanGetterPrefix>is</booleanGetterPrefix>
+                                <delegatePattern>true</delegatePattern>
+                                <useJakartaEe>true</useJakartaEe>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>identity ms v2</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/schemas/api-spec/ms-identity-status/openapi-spec-v2.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <library>spring-boot</library>
+                            <generateSupportingFiles>true</generateSupportingFiles>
+                            <modelPackage>${client.base.package.name}.openapi.model</modelPackage>
+                            <apiPackage>${client.base.package.name}.openapi.api</apiPackage>
+                            <configOptions>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <artifactVersion>${project.version}</artifactVersion>
+                                <bigDecimalAsString>true</bigDecimalAsString>
+                                <dateLibrary>java8</dateLibrary>
+                                <interfaceOnly>true</interfaceOnly>
+                                <java8>true</java8>
+                                <useBeanValidation>true</useBeanValidation>
+                                <booleanGetterPrefix>is</booleanGetterPrefix>
+                                <delegatePattern>true</delegatePattern>
+                                <useJakartaEe>true</useJakartaEe>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>application coordinator v1</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/schemas/api-spec/ms-pip-application-coordinator/openapi-spec-v1.yaml</inputSpec>
+                            <library>resttemplate</library>
+                            <generateSupportingFiles>true</generateSupportingFiles>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
+                            <modelPackage>${coordinator.client.base.package.name}.openapi.model</modelPackage>
+                            <apiPackage>${coordinator.client.base.package.name}.openapi.v1.api</apiPackage>
+                            <generatorName>java</generatorName>
+                            <configOptions>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <artifactVersion>${project.version}</artifactVersion>
+                                <bigDecimalAsString>true</bigDecimalAsString>
+                                <interfaceOnly>true</interfaceOnly>
+                                <java8>true</java8>
+                                <useBeanValidation>true</useBeanValidation>
                                 <delegatePattern>true</delegatePattern>
                                 <useJakartaEe>true</useJakartaEe>
                             </configOptions>
@@ -551,6 +640,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.5.2</version>
                         <executions>
                             <execution>
                                 <goals>

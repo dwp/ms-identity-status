@@ -4,6 +4,18 @@
         xmlns="https://github.com/spotbugs/filter/3.0.0"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
+        <Class name="uk.gov.dwp.health.coordinator.openapi.v1.ApiClient"/>
+    </Match>
+    <Match>
+        <Class name="uk.gov.dwp.health.coordinator.openapi.v1.ServerConfiguration"/>
+    </Match>
+    <Match>
+        <Class name="uk.gov.dwp.health.coordinator.openapi.v1.ServerVariable"/>
+    </Match>
+    <Match>
+        <Class name="uk.gov.dwp.health.coordinator.openapi.v1.ApiClient$ApiClientHttpRequestInterceptor"/>
+    </Match>
+    <Match>
         <Class name="uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1"/>
     </Match>
     <Match>

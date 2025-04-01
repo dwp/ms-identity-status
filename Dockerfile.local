@@ -1,0 +1,4 @@
+FROM amazoncorretto:17.0.11-alpine3.17@sha256:b1c248c5e972ff6a1e654217b7bb9837463d708f3992339db74b2d5abc48eb2c
+COPY target/ms-identity-status-*.jar /ms-identity-status.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/ms-identity-status.jar"]

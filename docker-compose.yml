@@ -1,4 +1,4 @@
-version: "2.1"
+version: "3.9"
 
 services:
 
@@ -16,7 +16,7 @@ services:
       - "4566:4566"
 
   mongo:
-    image: mongo:5.0@sha256:425e4c88ee3213fbd92c57565295a9fa7b5eb510744df5e9bcb8a003db410dff
+    image: mongo:5.0@sha256:54bcd8da3ea5eec561b68c605046c55c6b304387dc4c2bf5b3a5f5064fbb7495
     expose:
       - 27017
     ports:
@@ -37,44 +37,59 @@ services:
     ports:
       - "9930:8080"
 
+  wm-dwp-guid:
+    image: ${MOCK_IMAGE}
+    ports:
+      - "9980:8080"
+
   ms-identity-status:
     image: ${APP_IMAGE}
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.local
     environment:
+      - ACCOUNT_MANAGER_BASE_URL=http://wm-account-manager:8080
+      - APPLICATION_ACCOUNT_REGISTRATIONS_LIMIT=10
+      - APPLICATION_MANAGER_BASE_URL=http://wm-application-manager:8080
       - AWS_ACCESS_KEY_ID=dummyaccess
-      - AWS_SECRET_ACCESS_KEY=dummysecret
       - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ENCRYPTION_KMS_KEY_CACHE=true
       - AWS_ENCRYPTION_KMS_OVERRIDE=http://localstack:4566
       - AWS_ENCRYPTION_MESSAGE_DATA_KEY_ID=alias/test_event_request_id
-      - AWS_ENCRYPTION_KMS_KEY_CACHE=true
       - AWS_ENCRYPTION_REGION=eu-west-2
-      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
-      - SPRING_DATA_MONGODB_DATABASE=identity
-      - UK_GOV_DWP_HEALTH_INTEGRATION_OUTBOUND_TOPIC_EXCHANGE=pip_identity_event_nino
-      - UK_GOV_DWP_HEALTH_INTEGRATION_SNS_ENDPOINT_OVERRIDE=http://localstack:4566
-      - UK_GOV_DWP_HEALTH_INTEGRATION_SQS_ENDPOINT_OVERRIDE=http://localstack:4566
-      - UK_GOV_DWP_HEALTH_INBOUND_QUEUE_NAME_IDENTITY_RESPONSE=pip_idv_outcome
-      - UK_GOV_DWP_HEALTH_INBOUND_TOPIC=pip_identity_event_nino
-      - UK_GOV_DWP_HEALTH_INBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_inbound_routing
-      - UK_GOV_DWP_HEALTH_OUTBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_outbound_routing
-      - UK_GOV_DWP_HEALTH_OUTBOUND_QUEUE_NAME_IDENTITY_RESPONSE=update_pipcs_idv_queue
-      - UK_GOV_DWP_HEALTH_OUTBOUND_TOPIC=update_pipcs_idv_topic
-      - UK_GOV_DWP_HEALTH_OUTBOUND_GUIDEVENT_TOPIC=pip_identity_event_guid
-      - UK_GOV_DWP_HEALTH_OUTBOUND_GUIDEVENT_ROUTINGKEY=pip_identity_outbound_routing
+      - AWS_SECRET_ACCESS_KEY=dummysecret
+      - COORDINATOR_BASE_URL=http://wm-application-manager:8080
+      - FEATURE_DATA_CHANGESTREAM_ENABLED=false
       - FEATURE_ENCRYPTION_MESSAGING_ENABLED=false
-      - APPLICATION_MANAGER_BASE_URL=http://wm-application-manager:8080
-      - ACCOUNT_MANAGER_BASE_URL=http://wm-account-manager:8080
+      - MS_IDENTITY_STATUS_CONNECTION_TIMEOUT=30000
+      - SCHEDULE_RESET_REGISTRATIONS_COUNT=0-59/10 * * * * *
+      - SPRING_DATA_MONGODB_DATABASE=identity
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017
+      - UK_GOV_DWP_AUTH_TOKEN_SERVICE_URL=/citizen-information/oauth2/token
+      - UK_GOV_DWP_GUID_SERVICE_GUID_CREDENTIALS={"client_id":"sampleClientId", "secret":"sampleSecret"}
+      - UK_GOV_DWP_GUID_SERVICE_GUID_URL=/dwp-guid-service/v1/dwp-guid
+      - UK_GOV_DWP_GUID_SERVICE_NINO_URL=/dwp-guid-service/v1/nino
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_COLLECTION=identity
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_DATABASE=identity
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_ROUTING_KEY=identity.changed
       - UK_GOV_DWP_HEALTH_CHANGESTREAM_CHANNELS[0]_SKIP_DECRYPTION=true
+      - UK_GOV_DWP_HEALTH_COORDINATOR_OUTBOUND_QUEUE_NAME_IDENTITY_RESPONSE=update_coordinator_idv_queue
+      - UK_GOV_DWP_HEALTH_COORDINATOR_OUTBOUND_ROUTING_KEY_IDENTITY_RESPONSE=pip_identity_coordinator_outbound_routing
+      - UK_GOV_DWP_HEALTH_COORDINATOR_OUTBOUND_TOPIC=update_coordinator_idv_topic
+      - UK_GOV_DWP_HEALTH_GUIDEVENT_OUTBOUND_ROUTINGKEY=pip_identity_outbound_routing
+      - UK_GOV_DWP_HEALTH_GUIDEVENT_OUTBOUND_TOPIC=pip_identity_event_guid
+      - UK_GOV_DWP_HEALTH_IDENTITY_REQUEST_OUTBOUND_ROUTING_KEY=pip_identity_inbound_routing
+      - UK_GOV_DWP_HEALTH_IDENTITY_REQUEST_OUTBOUND_TOPIC_NAME=pip_identity_event_nino
+      - UK_GOV_DWP_HEALTH_IDENTITY_RESPONSE_INBOUND_QUEUE_NAME=pip_idv_outcome
+      - UK_GOV_DWP_HEALTH_IDENTITY_RESPONSE_INBOUND_ROUTING_KEY=pip_identity_inbound_routing
       - UK_GOV_DWP_HEALTH_INTEGRATION_MESSAGING_TYPE=aws
+      - UK_GOV_DWP_HEALTH_INTEGRATION_OUTBOUND_TOPIC_EXCHANGE=pip_identity_event_nino
       - UK_GOV_DWP_HEALTH_INTEGRATION_OUTBOUND_TOPIC_EXCHANGE=stream-topic
-      - FEATURE_DATA_CHANGESTREAM_ENABLED=false
-      - SCHEDULE_RESET_REGISTRATIONS_COUNT=0-59/10 * * * * *
-      - APPLICATION_ACCOUNT_REGISTRATIONS_LIMIT=10
+      - UK_GOV_DWP_HEALTH_INTEGRATION_SNS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - UK_GOV_DWP_HEALTH_INTEGRATION_SQS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - UK_GOV_DWP_HEALTH_PIPCS_OUTBOUND_ROUTING_KEY=pip_identity_outbound_routing
+      - UK_GOV_DWP_HEALTH_PIPCS_OUTBOUND_TOPIC=update_pipcs_idv_topic
+      - UK_GOV_DWP_INTEGRATION_GATEWAY_BASE_URL=http://wm-dwp-guid:8080
     depends_on:
       localstack:
         condition: service_healthy
@@ -83,6 +98,8 @@ services:
       wm-application-manager:
         condition: service_started
       wm-account-manager:
+        condition: service_started
+      wm-dwp-guid:
         condition: service_started
     expose:
       - 8080
@@ -96,6 +113,7 @@ services:
       - /ms-identity-status.jar
 
   api-tests:
+    profiles: [ api-test ]
     container_name: api-test
     image: '${MAVEN_IMAGE}'
     entrypoint: /bin/bash -c
@@ -122,7 +140,8 @@ services:
       REQUEST_QUEUE_URL: http://localstack:4566/000000000000/pip_idv_outcome
       DEAD_LETTER_QUEUE_URL: http://localstack:4566/000000000000/pip_idv_outcome_dlq
       RESPONSE_TOPIC_ARN: arn:aws:sns:eu-west-2:000000000000:update_pipcs_idv_topic
-      RESPONSE_QUEUE_URL: http://localstack:4566/000000000000/update_pipcs_idv_queue
+      RESPONSE_PIPCS_QUEUE_URL: http://localstack:4566/000000000000/update_pipcs_idv_queue
+      RESPONSE_PIPSERVICE_QUEUE_URL: http://localstack:4566/000000000000/update_coordinator_idv_queue
     volumes:
       - .:/usr/src
       - ${MVN_M2}:/root/.m2

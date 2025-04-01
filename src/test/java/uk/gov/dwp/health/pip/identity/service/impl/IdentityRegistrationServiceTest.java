@@ -1,17 +1,8 @@
 package uk.gov.dwp.health.pip.identity.service.impl;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,15 +10,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.dwp.health.identity.status.openapi.model.IdentityResponse;
-import uk.gov.dwp.health.integration.message.Constants;
-import uk.gov.dwp.health.monitoring.logging.LoggerContext;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 import uk.gov.dwp.health.pip.identity.exception.AccountNotFoundException;
 import uk.gov.dwp.health.pip.identity.exception.ConflictException;
 import uk.gov.dwp.health.pip.identity.exception.ValidationException;
 import uk.gov.dwp.health.pip.identity.messaging.PipIdentityGuidEventPublisher;
+import uk.gov.dwp.health.pip.identity.messaging.PipIdvOutcomeMessagePublisher;
 import uk.gov.dwp.health.pip.identity.model.AccountDetailsResponse;
+import uk.gov.dwp.health.pip.identity.model.IdentifierDto;
 import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
 import uk.gov.dwp.health.pip.identity.model.IdentityResponseDto;
 import uk.gov.dwp.health.pip.identity.model.TokenPayload;
@@ -35,62 +25,79 @@ import uk.gov.dwp.health.pip.identity.repository.IdentityRepository;
 import uk.gov.dwp.health.pip.identity.repository.RegistrationRepository;
 import uk.gov.dwp.health.pip.identity.service.IdentityRegistrationService;
 import uk.gov.dwp.health.pip.identity.webclient.AccountManagerWebClient;
-import uk.gov.dwp.health.pip.identity.webclient.ApplicationManagerWebClient;
+import uk.gov.dwp.health.pip.identity.webclient.GuidServiceClient;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static uk.gov.dwp.health.pip.identity.utils.IdentityStatusCalculator.UNVERIFIED;
+import static uk.gov.dwp.health.pip.identity.utils.IdentityStatusCalculator.VERIFIED;
 
 @ExtendWith(MockitoExtension.class)
 class IdentityRegistrationServiceTest {
-  UUID CORRELATION_ID = UUID.randomUUID();
-  String EMAIL = "test.user@dwp.gov.uk";
+  private static final String EMAIL = "test.user@dwp.gov.uk";
+  private static final String NINO = "RN000000A";
   private static final String OIDV = IdentityRequestUpdateSchemaV1.Channel.OIDV.value();
+
   @Mock private IdentityRepository repository;
-  @Mock private LoggerContext loggerContext;
-  @Mock private ApplicationManagerWebClient applicationManagerWebClient;
   @Mock private AccountManagerWebClient accountManagerWebClient;
   @Mock private PipIdentityGuidEventPublisher guidEventPublisher;
+  @Mock private PipIdvOutcomeMessagePublisher applicationIdLookupPublisher;
   @Mock private RegistrationRepository registrationRepository;
+  @Mock private GuidServiceClient guidServiceClient;
 
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   private final ObjectMapper mapper = new ObjectMapper();
   IdentityRegistrationService identityApiService;
 
-  @Captor ArgumentCaptor<Identity> captor;
+  @Captor ArgumentCaptor<Identity> identityArgumentCaptor;
 
   @BeforeEach
   void setUp() {
     identityApiService =
         new IdentityRegistrationService(
-                repository,
-                applicationManagerWebClient,
-                accountManagerWebClient,
-                mapper,
-                validator,
-                loggerContext,
-                guidEventPublisher,
-                registrationRepository
+            repository,
+            accountManagerWebClient,
+            mapper,
+            validator,
+            guidEventPublisher,
+            applicationIdLookupPublisher,
+            registrationRepository,
+            guidServiceClient
         );
   }
 
   @Test
   void shouldCreateIdentityForValidToken() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}";
     when(repository.findBySubjectId(EMAIL)).thenReturn(Optional.empty());
     when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
+    when(guidServiceClient.getNinoFromGuid(anyString())).thenReturn(IdentifierDto.builder().identifier(NINO).build());
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, false);
 
-    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
-
-    verify(repository, times(1)).save(captor.capture());
+    verify(repository, times(1)).save(identityArgumentCaptor.capture());
     verify(registrationRepository, times(1)).incrementRegistrationCount();
-    verify(guidEventPublisher, never()).publish(any(), any());
+    verify(guidEventPublisher, never()).publish(any());
 
-    assertThat(captor)
+    assertThat(identityArgumentCaptor)
         .satisfies(
             arg -> {
-              assertThat(arg.getValue().getNino()).isNull();
+              assertThat(arg.getValue().getNino()).isEqualTo(NINO);
               assertThat(arg.getValue().getErrorMessage()).isNull();
-              assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
+
               assertThat(arg.getValue().getChannel()).isEqualTo(OIDV);
-              assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
+              assertThat(arg.getValue().getIdvStatus()).isEqualTo(UNVERIFIED);
+              assertThat(arg.getValue().getSubjectId()).isEqualTo(EMAIL);
               assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
             });
     assertThat(identityResponseDto.isCreated()).isTrue();
@@ -101,28 +108,29 @@ class IdentityRegistrationServiceTest {
               assertThat(identityResponse.getRef()).isEqualTo("1234567890");
               assertThat(identityResponse.getApplicationId()).isNull();
             });
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
   }
 
   @Test
   void shouldUpdateExistingSubjectRecordForValidToken() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-    when(repository.findBySubjectId("test.user@dwp.gov.uk"))
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL))
         .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).build()));
     when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
+    when(guidServiceClient.getNinoFromGuid(anyString())).thenReturn(IdentifierDto.builder().identifier(NINO).build());
 
-    IdentityResponseDto identityResponseDto = identityApiService.register(payload, "oidv");
-    verify(applicationManagerWebClient, never()).getApplicationId(any());
-    verify(repository, times(1)).save(captor.capture());
-    verify(guidEventPublisher, never()).publish(any(), any());
-    assertThat(captor)
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, "oidv", false);
+    verify(repository, times(1)).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
+    assertThat(identityArgumentCaptor)
         .satisfies(
             arg -> {
-              assertThat(arg.getValue().getNino()).isNull();
+              assertThat(arg.getValue().getNino()).isEqualTo(NINO);
               assertThat(arg.getValue().getErrorMessage()).isNull();
-              assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
+
               assertThat(arg.getValue().getChannel()).isEqualTo("oidv");
-              assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
+              assertThat(arg.getValue().getIdvStatus()).isEqualTo(UNVERIFIED);
+              assertThat(arg.getValue().getSubjectId()).isEqualTo(EMAIL);
               assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
             });
     assertThat(identityResponseDto.isCreated()).isFalse();
@@ -133,304 +141,226 @@ class IdentityRegistrationServiceTest {
               assertThat(identityResponse.getRef()).isEqualTo("1234567890");
               assertThat(identityResponse.getApplicationId()).isNull();
             });
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
   }
 
   @Test
-  void shouldUpdateExistingSubjectRecordWithApplicationId() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-    when(repository.findBySubjectId("test.user@dwp.gov.uk"))
-        .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).nino("RN000004A").build()));
-    when(repository.save(any()))
-        .thenReturn(Identity.builder().id("1234567890").applicationID("0987654321").build());
-    when(applicationManagerWebClient.getApplicationId("RN000004A")).thenReturn(Optional.of("0987654321"));
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-
-    IdentityResponseDto identityResponseDto = identityApiService.register(payload, "oidv");
-
-    verify(repository, times(1)).save(captor.capture());
-    verify(guidEventPublisher, never()).publish(any(), any());
-    assertThat(captor)
-        .satisfies(
-            arg -> {
-              assertThat(arg.getValue().getNino()).isEqualTo("RN000004A");
-              assertThat(arg.getValue().getErrorMessage()).isNull();
-              assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
-              assertThat(arg.getValue().getChannel()).isEqualTo("oidv");
-              assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
-              assertThat(arg.getValue().getApplicationID()).isEqualTo("0987654321");
-              assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
-            });
-    assertThat(identityResponseDto.isCreated()).isFalse();
-    assertThat(identityResponseDto)
-        .extracting(IdentityResponseDto::getIdentityResponse)
-        .satisfies(
-            identityResponse -> {
-              assertThat(identityResponse.getRef()).isEqualTo("1234567890");
-              assertThat(identityResponse.getApplicationId()).isEqualTo("0987654321");
-            });
-  }
-
-  @Test
-  void shouldUpdateExistingSubjectRecordWithErrorMessageIfApplicationIdNotFound() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-    when(repository.findBySubjectId("test.user@dwp.gov.uk"))
-        .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).nino("RN000004A").build()));
-    when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
-    when(applicationManagerWebClient.getApplicationId("RN000004A")).thenReturn(Optional.empty());
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-
-    IdentityResponseDto identityResponseDto = identityApiService.register(payload, "oidv");
-
-    verify(repository, times(1)).save(captor.capture());
-    verify(guidEventPublisher, never()).publish(any(), any());
-    assertThat(captor)
-        .satisfies(
-            arg -> {
-              assertThat(arg.getValue().getNino()).isEqualTo("RN000004A");
-              assertThat(arg.getValue().getErrorMessage())
-                  .isEqualTo("Application ID not found for identity with id: " + CORRELATION_ID);
-              assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
-              assertThat(arg.getValue().getChannel()).isEqualTo("oidv");
-              assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
-              assertThat(arg.getValue().getApplicationID()).isNull();
-              assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
-            });
-    assertThat(identityResponseDto.isCreated()).isFalse();
-    assertThat(identityResponseDto)
-        .extracting(IdentityResponseDto::getIdentityResponse)
-        .satisfies(
-            identityResponse -> {
-              assertThat(identityResponse.getRef()).isEqualTo("1234567890");
-              assertThat(identityResponse.getApplicationId()).isNull();
-            });
-  }
-
-  @Test
-  void shouldUpdateExistingSubjectRecordWithErrorMessageIfWebClientThrowsError() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-    when(repository.findBySubjectId("test.user@dwp.gov.uk"))
-        .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).nino("RN000004A").build()));
-    when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
-    when(applicationManagerWebClient.getApplicationId("RN000004A"))
-        .thenThrow(new ConflictException("Conflict occurred while processing the request"));
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-
-    IdentityResponseDto identityResponse = identityApiService.register(payload, "oidv");
-
-    verify(repository, times(1)).save(captor.capture());
-    verify(guidEventPublisher, never()).publish(any(), any());
-    assertThat(captor)
-        .satisfies(
-            arg -> {
-              assertThat(arg.getValue().getNino()).isEqualTo("RN000004A");
-              assertThat(arg.getValue().getErrorMessage())
-                  .isEqualTo("Conflict occurred while processing the request");
-              assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
-              assertThat(arg.getValue().getChannel()).isEqualTo("oidv");
-              assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
-              assertThat(arg.getValue().getApplicationID()).isNull();
-              assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
-            });
-    assertThat(identityResponse.isCreated()).isFalse();
-    assertThat(identityResponse)
-        .extracting(IdentityResponseDto::getIdentityResponse)
-        .extracting(IdentityResponse::getRef)
-        .isEqualTo("1234567890");
-  }
-
-  @Test
-  void shouldPublishGuidEventNewRecord() {
+  void shouldLookupNinoAndUpdatePipcsNewRecord() {
     String payload =
-        "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P2.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
-    when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
+        "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P2.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
 
-    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, true);
 
-    verify(guidEventPublisher, atMostOnce())
-        .publish(any(TokenPayload.class), eq(CORRELATION_ID.toString()));
+    verify(guidEventPublisher, times(1)).publish(any(TokenPayload.class));
 
     assertThat(identityResponseDto).isNull();
+    verify(guidServiceClient, times(0)).getNinoFromGuid(anyString());
   }
 
-    @Test
-    void shouldPublishGuidEventIdentityHasNoNino() {
-        String payload =
-                "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
-        when(repository.findBySubjectId("test.user@dwp.gov.uk"))
-                .thenReturn(Optional.of(Identity.builder().id("1234").subjectId(EMAIL).build()));
-        when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-        identityApiService.register(payload, "seeded");
+  @Test
+  void shouldNotPublishGuidEventNewRecordIfPublishFlagIsNull() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).build()));
+    when(repository.save(identityArgumentCaptor.capture())).thenReturn(Identity.builder().id("1234567890").build());
+    when(guidServiceClient.getNinoFromGuid(anyString())).thenReturn(IdentifierDto.builder().identifier(NINO).build());
 
-        verify(guidEventPublisher, atMostOnce())
-                .publish(any(TokenPayload.class), eq(CORRELATION_ID.toString()));
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, null);
 
-    }
+    verify(guidEventPublisher, times(0)).publish(any(TokenPayload.class));
 
-    @Test
-    void shouldNotPublishGuidEventIdentityHasNino() {
-        String payload =
-                "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
-        when(repository.findBySubjectId("test.user@dwp.gov.uk"))
-                .thenReturn(Optional.of(Identity.builder().id("1234").subjectId(EMAIL).nino("RN000004A").build()));
-        when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
-        when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-        identityApiService.register(payload, "seeded");
-
-        verify(guidEventPublisher, never())
-                .publish(any(TokenPayload.class), eq(CORRELATION_ID.toString()));
-
-    }
+    assertThat(identityResponseDto).isNotNull();
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
+    assertThat(identityArgumentCaptor.getValue().getIdvStatus()).isEqualTo(UNVERIFIED);
+  }
 
   @Test
-  void shouldReturnValidationExceptionInValidVot() {
-    String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P06.Cl.Cm\"}";
-    assertThatThrownBy(() -> identityApiService.register(payload, OIDV))
+  void shouldNotPublishGuidEventNewRecordIfPublishFlagIsFalse() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.of(Identity.builder().subjectId(EMAIL).build()));
+    when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
+    when(guidServiceClient.getNinoFromGuid(anyString())).thenReturn(IdentifierDto.builder().identifier(NINO).build());
+
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, false);
+
+    verify(guidEventPublisher, times(0)).publish(any(TokenPayload.class));
+
+    assertThat(identityResponseDto).isNotNull();
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
+  }
+
+  @Test
+  void shouldLookupNinoAndUpdatePipcsIdentityHasNoNino() {
+    String payload =
+        "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.of(Identity.builder().id("1234").subjectId(EMAIL).build()));
+    identityApiService.register(payload, "seeded", true);
+
+    verify(guidEventPublisher, times(1)).publish(any(TokenPayload.class));
+    verify(guidServiceClient, times(0)).getNinoFromGuid(anyString());
+  }
+
+  @Test
+  void shouldNotPublishGuidEventIdentityHasNino() {
+    String payload =
+        "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"13f03f9da3a0f493e04df091865f8e77f63\"}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.of(Identity.builder().id("1234").subjectId(EMAIL).nino("RN000004A").build()));
+    identityApiService.register(payload, "seeded", true);
+
+    verify(guidEventPublisher, never()).publish(any(TokenPayload.class));
+    verify(guidServiceClient, times(0)).getNinoFromGuid(anyString());
+  }
+
+  @Test
+  void shouldReturnValidationExceptionInvalidVot() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P06.Cl.Cm\", \"guid\": \"123123123\"}}";
+    assertThatThrownBy(() -> identityApiService.register(payload, OIDV, false))
         .isInstanceOf(ValidationException.class)
         .hasMessage("Unable to parse the token");
   }
 
   @Test
   void shouldReturnValidationExceptionForValidPayload() {
-    String payload = "{\"sub\": null, \"vot\": \"P0.Cl.Cm\"}";
-    assertThatThrownBy(() -> identityApiService.register(payload, OIDV))
+    String payload = "{\"sub\": null, \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    assertThatThrownBy(() -> identityApiService.register(payload, OIDV, false))
         .isInstanceOf(ValidationException.class)
         .hasMessage("Invalid payload");
   }
 
-    @Test
-    void shouldReturnSubjectIdInResponseForValidCreation() {
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-        when(repository.findBySubjectId(EMAIL)).thenReturn(Optional.empty());
-        when(repository.save(any())).thenReturn(Identity.builder().id("1234567890")
-                .subjectId(EMAIL).build());
-        when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
+  @Test
+  void shouldReturnSubjectIdInResponseForValidCreation() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL)).thenReturn(Optional.empty());
+    when(repository.save(any())).thenReturn(Identity.builder().id("1234567890")
+        .subjectId(EMAIL).build());
+    when(guidServiceClient.getNinoFromGuid(anyString())).thenReturn(IdentifierDto.builder().identifier(NINO).build());
 
-        IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, false);
 
-        verify(repository, times(1)).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
-        assertThat(captor)
-                .satisfies(
-                        arg -> {
-                            assertThat(arg.getValue().getNino()).isNull();
-                            assertThat(arg.getValue().getErrorMessage()).isNull();
-                            assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
-                            assertThat(arg.getValue().getChannel()).isEqualTo(OIDV);
-                            assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
-                            assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
-                        });
-        assertThat(identityResponseDto.isCreated()).isTrue();
-        assertThat(identityResponseDto)
-                .extracting(IdentityResponseDto::getIdentityResponse)
-                .satisfies(
-                        identityResponse -> {
-                            assertThat(identityResponse.getRef()).isEqualTo("1234567890");
-                            assertThat(identityResponse.getApplicationId()).isNull();
-                            assertThat(identityResponse.getSubjectId()).isEqualTo(EMAIL);
-                        });
-    }
+    verify(repository, times(1)).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
+    assertThat(identityArgumentCaptor)
+        .satisfies(
+            arg -> {
+              assertThat(arg.getValue().getNino()).isEqualTo(NINO);
+              assertThat(arg.getValue().getErrorMessage()).isNull();
 
-    @Test
-    void shouldThrowExceptionForExistingAccount() {
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-        when(accountManagerWebClient.getAccountDetailsFromEmail("test.user@dwp.gov.uk"
-        )).thenReturn(Optional.ofNullable(AccountDetailsResponse.of("1234")));
+              assertThat(arg.getValue().getChannel()).isEqualTo(OIDV);
+              assertThat(arg.getValue().getSubjectId()).isEqualTo(EMAIL);
+              assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
+              assertThat(arg.getValue().getIdvStatus()).isEqualTo(UNVERIFIED);
+            });
+    assertThat(identityResponseDto.isCreated()).isTrue();
+    assertThat(identityResponseDto)
+        .extracting(IdentityResponseDto::getIdentityResponse)
+        .satisfies(
+            identityResponse -> {
+              assertThat(identityResponse.getRef()).isEqualTo("1234567890");
+              assertThat(identityResponse.getApplicationId()).isNull();
+              assertThat(identityResponse.getSubjectId()).isEqualTo(EMAIL);
+            });
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
+  }
 
-        verify(repository, never()).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
+  @Test
+  void shouldThrowExceptionForExistingAccount() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(accountManagerWebClient.getAccountDetailsFromEmail(EMAIL
+    )).thenReturn(Optional.ofNullable(AccountDetailsResponse.of("1234")));
 
-        assertThrows(ConflictException.class, () -> identityApiService.register(payload, OIDV));
-    }
+    verify(repository, never()).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
 
-    @Test
-    void shouldThrowExceptionWhenAccountNotFoundExceptionThrown() {
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"}";
-        when(accountManagerWebClient.getAccountDetailsFromEmail("test.user@dwp.gov.uk"
-        )).thenThrow(new AccountNotFoundException("Test"));
+    assertThrows(ConflictException.class, () -> identityApiService.register(payload, OIDV, false));
+  }
 
-        when(repository.save(any())).thenReturn(Identity.builder().id("1234567890")
-                .subjectId(EMAIL).build());
-        when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
+  @Test
+  void shouldThrowExceptionWhenAccountNotFoundExceptionThrown() {
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}}";
+    when(accountManagerWebClient.getAccountDetailsFromEmail(EMAIL))
+        .thenThrow(new AccountNotFoundException("Test"));
+    when(guidServiceClient.getNinoFromGuid(anyString()))
+        .thenReturn(IdentifierDto.builder().identifier(NINO).build());
+    when(repository.save(any()))
+        .thenReturn(Identity.builder().id("1234567890").subjectId(EMAIL).build());
 
-        identityApiService.register(payload, OIDV);
+    identityApiService.register(payload, OIDV, false);
 
-        verify(repository, times(1)).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
-    }
+    verify(repository, times(1)).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
+    verify(guidServiceClient, times(1)).getNinoFromGuid(anyString());
+    assertThat(identityArgumentCaptor.getValue().getIdvStatus()).isEqualTo(UNVERIFIED);
+  }
 
-    @Test
-    void shouldReturnIdentityWhenNoVotPassedAndIdentityExists() {
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\" }";
-        when(repository.findBySubjectId(EMAIL))
-                .thenReturn(Optional.of(Identity.builder()
-                        .subjectId(EMAIL).id("1234")
-                        .applicationID("4567")
-                        .build()));
+  @Test
+  void shouldReturnIdentityWhenNoVotPassedAndIdentityExists() {
+    String payload = "{\"sub\": \"" + EMAIL + "\" , \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.of(Identity.builder()
+            .subjectId(EMAIL).id("1234")
+            .applicationID("4567")
+            .build()));
 
-        IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV);
+    IdentityResponseDto identityResponseDto = identityApiService.register(payload, OIDV, false);
 
-        verify(repository, never()).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
-        assertThat(identityResponseDto.isCreated()).isFalse();
-        assertThat(identityResponseDto)
-                .extracting(IdentityResponseDto::getIdentityResponse)
-                .satisfies(
-                        identityResponse -> {
-                            assertThat(identityResponse.getRef()).isEqualTo("1234");
-                            assertThat(identityResponse.getApplicationId()).isEqualTo("4567");
-                            assertThat(identityResponse.getSubjectId()).isEqualTo(EMAIL);
-                        });
-    }
+    verify(repository, never()).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
+    assertThat(identityResponseDto.isCreated()).isFalse();
+    assertThat(identityResponseDto)
+        .extracting(IdentityResponseDto::getIdentityResponse)
+        .satisfies(
+            identityResponse -> {
+              assertThat(identityResponse.getRef()).isEqualTo("1234");
+              assertThat(identityResponse.getApplicationId()).isEqualTo("4567");
+              assertThat(identityResponse.getSubjectId()).isEqualTo(EMAIL);
+            });
+    verify(guidServiceClient, never()).getNinoFromGuid(anyString());
+  }
 
-    @Test
-    void shouldThrowIdentityNotFoundExceptionIfNoVotAndNoIdentity() {
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\" }";
-        when(repository.findBySubjectId(EMAIL))
-                .thenReturn(Optional.empty());
-        assertThatThrownBy(()-> identityApiService.register(payload, OIDV))
-                .hasMessage("No VOT in token and no Identity found for sub");
+  @Test
+  void shouldThrowIdentityNotFoundExceptionIfNoVotAndNoIdentity() {
+    String payload = "{\"sub\": \"" + EMAIL + "\" , \"guid\": \"123123123\"}}";
+    when(repository.findBySubjectId(EMAIL))
+        .thenReturn(Optional.empty());
+    assertThatThrownBy(() -> identityApiService.register(payload, OIDV, false))
+        .hasMessage("No VOT in token and no Identity found for sub");
 
-        verify(repository, never()).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
-    }
+    verify(repository, never()).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
+  }
 
-    @Test
-    void shouldSuccessfullyUpdateWhenAnExistingMediumConfidenceRecordIsDowngraded() {
-        UUID identityId = UUID.randomUUID();
-        LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
-        when(loggerContext.get(Constants.CORRELATION_ID_LOG_KEY)).thenReturn(CORRELATION_ID.toString());
-        when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
+  @Test
+  void shouldSuccessfullyUpdateWhenAnExistingMediumConfidenceRecordIsDowngraded() {
+    UUID identityId = UUID.randomUUID();
+    LocalDateTime dateTime = LocalDateTime.now().minusMinutes(2);
+    when(repository.save(any())).thenReturn(Identity.builder().id("1234567890").build());
 
-        Identity savedIdentity =
-                new Identity(
-                        "id",
-                        "test.user@dwp.gov.uk",
-                        identityId,
-                        dateTime,
-                        OIDV,
-                        null,
-                        "RN000004A",
-                        "test123",
-                        null,
-                        IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM.value());
-        when(repository.findBySubjectId("test.user@dwp.gov.uk")).thenReturn(Optional.of(savedIdentity));
+    Identity savedIdentity =
+        new Identity(
+            "id", EMAIL, identityId, dateTime, OIDV, null, "RN000004A", "test123", null,
+            IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM.value());
+    when(repository.findBySubjectId(EMAIL)).thenReturn(Optional.of(savedIdentity));
 
-        String payload = "{\"sub\": \"test.user@dwp.gov.uk\", \"vot\": \"P0.Cl.Cm\"} }";
-        identityApiService.register(payload, OIDV);
+    String payload = "{\"sub\": \"" + EMAIL + "\", \"vot\": \"P0.Cl.Cm\", \"guid\": \"123123123\"}";
+    identityApiService.register(payload, OIDV, false);
 
-        verify(repository, times(1)).save(captor.capture());
-        verify(guidEventPublisher, never()).publish(any(), any());
+    verify(repository, times(1)).save(identityArgumentCaptor.capture());
+    verify(guidEventPublisher, never()).publish(any());
 
-        assertThat(captor)
-            .satisfies(
-                arg -> {
-                    assertThat(arg.getValue().getNino()).isEqualTo("RN000004A");
-                    assertThat(arg.getValue().getErrorMessage()).isNull();
-                    assertThat(arg.getValue().getIdentityId()).isEqualTo(CORRELATION_ID);
-                    assertThat(arg.getValue().getChannel()).isEqualTo(OIDV);
-                    assertThat(arg.getValue().getSubjectId()).isEqualTo("test.user@dwp.gov.uk");
-                    assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
-                    assertThat(arg.getValue().getVot()).isEqualTo(IdentityRequestUpdateSchemaV1.Vot.P_0_CL_CM.value());
-                });
-    }
+    assertThat(identityArgumentCaptor)
+        .satisfies(
+            arg -> {
+              assertThat(arg.getValue().getNino()).isEqualTo("RN000004A");
+              assertThat(arg.getValue().getErrorMessage()).isNull();
+
+              assertThat(arg.getValue().getChannel()).isEqualTo(OIDV);
+              assertThat(arg.getValue().getIdvStatus()).isNull();
+              assertThat(arg.getValue().getSubjectId()).isEqualTo(EMAIL);
+              assertThat(arg.getValue().getDateTime()).isBeforeOrEqualTo(LocalDateTime.now());
+              assertThat(arg.getValue().getVot()).isEqualTo(IdentityRequestUpdateSchemaV1.Vot.P_0_CL_CM.value());
+            });
+  }
 }

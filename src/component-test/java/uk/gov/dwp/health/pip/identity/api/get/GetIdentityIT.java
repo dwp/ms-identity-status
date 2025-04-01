@@ -24,7 +24,7 @@ public class GetIdentityIT extends ApiTest {
 
   @BeforeEach
   void testSetup() {
-    MongoClientConnection.emptyMongoCollection();
+    MongoClientConnection.emptyMongoIdentityCollection();
   }
 
   @Test
@@ -47,21 +47,26 @@ public class GetIdentityIT extends ApiTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
   }
 
-    private static Stream<Arguments> provideVotAndIdvStatus () {
+  private static Stream<Arguments> provideVotAndIdvStatus() {
     return Stream.of(
-            Arguments.of("P0.Cl.Cm", "unverified","unverified"),
-            Arguments.of("P1.Cl.Cm", "unverified","unverified"),
-            Arguments.of("P2.Cl.Cm", "unverified","verified"),
-            Arguments.of("P0.Cl.Cm", "verified","unverified"),
-            Arguments.of("P1.Cl.Cm", "verified","unverified"),
-            Arguments.of("P2.Cl.Cm", "verified","verified"),
-            Arguments.of(null, "verified","verified"),
-            Arguments.of(null, "unverified","unverified")
-            );
+        Arguments.of("P0.Cl.Cm", "unverified", "unverified"),
+        Arguments.of("P1.Cl.Cm", "unverified", "unverified"),
+        Arguments.of("P2.Cl.Cm", "unverified", "verified"),
+        Arguments.of("P0.Cl.Cm", "verified","unverified"),
+        Arguments.of("P1.Cl.Cm", "verified","unverified"),
+        Arguments.of("P2.Cl.Cm", "verified", "verified"),
+        Arguments.of(null, "verified", "verified"),
+        Arguments.of(null, "unverified", "unverified")
+    );
   }
+
   @ParameterizedTest
   @MethodSource("provideVotAndIdvStatus")
-  public void getIdvStatusByNinoFor_vot_idvStatus_shouldReturn200IfIdentityFound(String votValue, String currentIdvStatus, String expectedIdvStatus) {
+  public void getIdvStatusByNinoFor_vot_idvStatus_shouldReturn200IfIdentityFound(
+      String votValue,
+      String currentIdvStatus,
+      String expectedIdvStatus
+  ) {
     final String nino ="AB000000B";
     MongoClientConnection.getMongoTemplate()
             .save(
@@ -86,12 +91,16 @@ public class GetIdentityIT extends ApiTest {
 
   @ParameterizedTest
   @MethodSource("provideVotAndIdvStatus")
-  public void getIdvStatusBySubjectIdFor_vot_idvStatus_shouldReturn200IfIdentityFound(String votValue, String currentIdvStatus, String expectedIdvStatus) {
+  public void getIdvStatusBySubjectIdFor_vot_idvStatus_shouldReturn200IfIdentityFound(
+      String votValue,
+      String currentIdvStatus,
+      String expectedIdvStatus
+  ) {
     final String subjectId = "test_subjectId@dwp.gov.uk";
     MongoClientConnection.getMongoTemplate()
             .save(
                     new Identity(
-                            "2",
+                            "507f1f77bcf86cd799439011",
                             subjectId,
                             identityId,
                             LocalDateTime.now().minusMinutes(10),

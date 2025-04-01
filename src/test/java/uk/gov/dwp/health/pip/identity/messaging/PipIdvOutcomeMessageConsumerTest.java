@@ -4,12 +4,13 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,6 @@ import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1;
 import uk.gov.dwp.health.pip.identity.service.IdentityService;
 import uk.gov.dwp.health.pip.identity.service.impl.IdentityBuilder;
 
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -35,7 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PipIdvOutcomeMessageConsumerTest {
@@ -47,9 +48,12 @@ class PipIdvOutcomeMessageConsumerTest {
 
   @Mock IdentityService identityService;
 
-  @Mock UpdatePipCsIdentityMessagePublisher updatePipCsIdentityMessagePublisher;
   @Mock MessageHeaders messageHeaders;
-  @InjectMocks private PipIdvOutcomeMessageConsumer pipIdvOutcomeMessageConsumer;
+
+  @Mock
+  private IdvUpdateMessageDistributor idvUpdateMessageDistributor;
+  @Mock
+  private PipIdvOutcomeMessageConsumer pipIdvOutcomeMessageConsumer;
   private IdentityRequestUpdateSchemaV1 payload;
   Logger idvOutcomeLogger = (Logger) LoggerFactory.getLogger(PipIdvOutcomeMessageConsumer.class);
 
@@ -68,7 +72,8 @@ class PipIdvOutcomeMessageConsumerTest {
             inboundEventProperties,
             validator,
             identityService,
-            updatePipCsIdentityMessagePublisher);
+            idvUpdateMessageDistributor
+        );
   }
 
   @Test
@@ -81,7 +86,7 @@ class PipIdvOutcomeMessageConsumerTest {
   @Test
   @DisplayName("Should not throw any exception for valid input")
   void handleMessageDoesNotThrowWithValidInput() {
-    when(identityService.createIdentity(any()))
+    when(identityService.recordUpliftedIdentity(any()))
         .thenAnswer(invocation -> IdentityBuilder.createBuilder(invocation.getArgument(0)).build());
     assertDoesNotThrow(() -> pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload));
   }
@@ -97,7 +102,7 @@ class PipIdvOutcomeMessageConsumerTest {
     payload.setSubjectId("positive@dwp.gov.uk");
     payload.setChannel(IdentityRequestUpdateSchemaV1.Channel.fromValue("oidv"));
 
-    when(identityService.createIdentity(any()))
+    when(identityService.recordUpliftedIdentity(any()))
             .thenAnswer(invocation -> IdentityBuilder.createBuilder(invocation.getArgument(0)).build());
     assertDoesNotThrow(() -> pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload));
   }
@@ -133,7 +138,7 @@ class PipIdvOutcomeMessageConsumerTest {
     listAppender.start();
     idvOutcomeLogger.addAppender(listAppender);
 
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
+    when(identityService.recordUpliftedIdentity(any(IdentityRequestUpdateSchemaV1.class)))
         .thenThrow(ConflictException.class);
 
     pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
@@ -149,7 +154,7 @@ class PipIdvOutcomeMessageConsumerTest {
         .extracting(ILoggingEvent::getMessage)
         .isEqualTo("Conflict Exception thrown creating identity");
 
-    verify(updatePipCsIdentityMessagePublisher, never()).publishMessage(any(), any(), any());
+    verify(idvUpdateMessageDistributor, never()).distribute(any(),any());
   }
 
   @Test
@@ -158,7 +163,7 @@ class PipIdvOutcomeMessageConsumerTest {
     listAppender.start();
     idvOutcomeLogger.addAppender(listAppender);
 
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
+    when(identityService.recordUpliftedIdentity(any(IdentityRequestUpdateSchemaV1.class)))
         .thenThrow(NoKeyChangesToExistingRecordException.class);
 
     pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
@@ -174,70 +179,32 @@ class PipIdvOutcomeMessageConsumerTest {
         .extracting(ILoggingEvent::getMessage)
         .isEqualTo("No key changes to existing record detected");
 
-    verify(updatePipCsIdentityMessagePublisher, never()).publishMessage(any(), any(), any());
+    verify(idvUpdateMessageDistributor, never()).distribute(any(), any());
   }
 
   @Test
-  void shouldNotPublishMessageIfErrorIsNotEmpty() {
+  void shouldTriggerMessageDistributorIfErrorIsNotEmpty() {
+    when(identityService.recordUpliftedIdentity(any(IdentityRequestUpdateSchemaV1.class)))
+        .thenReturn(Identity.builder()
+            .idvStatus("verified")
+            .applicationID(String.valueOf(UUID.randomUUID()))
+            .identityId(identityId)
+            .build());
 
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
+    pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
+
+    verify(idvUpdateMessageDistributor, times(1)).distribute(any(), any());
+  }
+
+  @Test
+  void shouldNotTriggerMessageDistributorIfErrorIsNotEmpty() {
+
+    when(identityService.recordUpliftedIdentity(any(IdentityRequestUpdateSchemaV1.class)))
         .thenReturn(Identity.builder().errorMessage("Error").build());
 
     pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
 
-    verify(updatePipCsIdentityMessagePublisher, never()).publishMessage(any(), any(), any());
-  }
-
-  @Test
-  void shouldNotPublishMessageIfVotValueIsNotP2() {
-
-    payload.setIdvOutcome(null);
-    payload.setVot(IdentityRequestUpdateSchemaV1.Vot.P_0_CL_CM);
-
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
-        .thenReturn(Identity.builder().build());
-
-    pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
-
-    verify(updatePipCsIdentityMessagePublisher, never()).publishMessage(any(), any(), any());
-  }
-
-  @Test
-  void shouldPublishMessageIfVotValueIsP2() {
-
-    payload.setIdvOutcome(null);
-    payload.setVot(IdentityRequestUpdateSchemaV1.Vot.P_2_CL_CM);
-
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
-            .thenReturn(
-                    Identity.builder()
-                            .vot("P2.Cl.Cm")
-                            .nino("RN000001A")
-                            .applicationID("5ed0d430716609122be7a4d8")
-                            .identityId(identityId)
-                            .build());
-
-    pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
-
-    verify(updatePipCsIdentityMessagePublisher, times(1))
-            .publishMessage("5ed0d430716609122be7a4d8", "verified", String.valueOf(identityId));
-  }
-
-  @Test
-  void shouldPublishMessageIfIDVOutComeValueIsVerified() {
-
-    when(identityService.createIdentity(any(IdentityRequestUpdateSchemaV1.class)))
-        .thenReturn(
-            Identity.builder()
-                .idvStatus("verified")
-                .applicationID("5ed0d430716609122be7a4d8")
-                .identityId(identityId)
-                .build());
-
-    pipIdvOutcomeMessageConsumer.handleMessage(messageHeaders, payload);
-
-    verify(updatePipCsIdentityMessagePublisher, times(1))
-        .publishMessage("5ed0d430716609122be7a4d8", "verified", String.valueOf(identityId));
+    verify(idvUpdateMessageDistributor, never()).distribute(any(), any());
   }
 
   private String getCurrentDate() {

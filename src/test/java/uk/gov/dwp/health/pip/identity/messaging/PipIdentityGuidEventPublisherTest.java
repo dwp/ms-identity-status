@@ -37,16 +37,13 @@ class PipIdentityGuidEventPublisherTest {
     when(eventProperties.getTopic()).thenReturn("pip_identity_event_guid");
     when(eventProperties.getRoutingKey()).thenReturn("pip_identity_outbound_routing");
 
-    String identityId = String.valueOf(UUID.randomUUID());
-    LocalDateTime now = LocalDateTime.now();
-
     TokenPayload tokenPayload =
         TokenPayload.of(
             "test@dwp.gov.uk",
             TokenPayload.VotEnum.P2_CL_CM,
             "13f03f9da3a0f493e04df091865f8e77f63");
 
-    guidEventPublisher.publish(tokenPayload, String.valueOf(identityId));
+    guidEventPublisher.publish(tokenPayload);
 
     verify(eventManager, atMostOnce()).send(eventArgumentCaptor.capture());
     assertThat(eventArgumentCaptor.getValue())
@@ -60,7 +57,6 @@ class PipIdentityGuidEventPublisherTest {
                       entry("subject_id", "test@dwp.gov.uk"),
                       entry("channel", "oidv"),
                       entry("guid", "13f03f9da3a0f493e04df091865f8e77f63"),
-                      entry("identity_id", identityId),
                       entry("vot", TokenPayload.VotEnum.P2_CL_CM));
               assertThat(
                       DateParseUtil.stringToDateTime(
@@ -74,13 +70,10 @@ class PipIdentityGuidEventPublisherTest {
     when(eventProperties.getTopic()).thenReturn("pip_identity_event_guid");
     when(eventProperties.getRoutingKey()).thenReturn("pip_identity_outbound_routing");
 
-    String identityId = String.valueOf(UUID.randomUUID());
-    LocalDateTime now = LocalDateTime.now();
-
     TokenPayload tokenPayload =
         TokenPayload.of("test@dwp.gov.uk", null, "13f03f9da3a0f493e04df091865f8e77f63");
 
-    guidEventPublisher.publish(tokenPayload, String.valueOf(identityId));
+    guidEventPublisher.publish(tokenPayload);
 
     verify(eventManager, atMostOnce()).send(eventArgumentCaptor.capture());
     assertThat(eventArgumentCaptor.getValue())
@@ -94,8 +87,7 @@ class PipIdentityGuidEventPublisherTest {
                       entry("subject_id", "test@dwp.gov.uk"),
                       entry("channel", "oidv"),
                       entry("guid", "13f03f9da3a0f493e04df091865f8e77f63"),
-                      entry("idv_outcome", "verified"),
-                      entry("identity_id", identityId));
+                      entry("idv_outcome", "verified"));
               assertThat(
                       DateParseUtil.stringToDateTime(
                           (String) pipIdentityGuidEvent.getPayload().get("timestamp")))
@@ -106,7 +98,7 @@ class PipIdentityGuidEventPublisherTest {
   @Test
   void shouldThrowExceptionIfEventManagerThrowsException() {
     doThrow(RuntimeException.class).when(eventManager).send(any());
-    assertThatThrownBy(() -> guidEventPublisher.publish(new TokenPayload(), "id"))
+    assertThatThrownBy(() -> guidEventPublisher.publish(new TokenPayload()))
         .hasMessage("Error publishing Pip Identity guid event");
   }
 }

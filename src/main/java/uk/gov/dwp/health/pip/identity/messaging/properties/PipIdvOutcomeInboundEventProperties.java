@@ -17,11 +17,11 @@ public class PipIdvOutcomeInboundEventProperties {
 
   @NotNull(message = "Identity response message routing key can not be null")
   @NotBlank(message = "Identity response message routing key can not be blank")
-  @Value("${uk.gov.dwp.health.inbound.routing.key.identity.response}")
+  @Value("${uk.gov.dwp.health.identity.response.inbound.routing.key}")
   private String routingKeyIdentityResponse;
 
   @NotNull(message = "Identity response message queue name can not be null")
   @NotBlank(message = "Identity response message queue name can not be blank")
-  @Value("${uk.gov.dwp.health.inbound.queue.name.identity.response}")
+  @Value("${uk.gov.dwp.health.identity.response.inbound.queue.name}")
   private String queueNameIdentityResponse;
 }

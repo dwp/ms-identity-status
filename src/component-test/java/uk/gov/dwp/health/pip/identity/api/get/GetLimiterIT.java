@@ -66,10 +66,11 @@ class GetLimiterIT extends ApiTest {
 
   private void verifyNewRegistration() {
 
-    // payload = {"sub": "identity_no_account@test.com", "vot": "P0.Cl.Cm", "iat": 1516239022}
+    // payload = {"sub": "identity_no_account@test.com", "vot": "P0.Cl.Cm", "iat": 1516239022, "guid":"023c3305534381c6cc37ec4edc7da2b1cf1c50a8596beb5da3a9aa585cfb0497"}
     String token =
-            "eyJzdWIiOiJpZGVudGl0eV9ub19hY2NvdW50QHRlc3QuY29tIiwidm90IjoiUDAuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.eyJzdWIiOiJpZGVudGl0eV9ub19hY2NvdW50QHRlc3QuY29tIiwidm90IjoiUDAuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9.c1ZwVhXCl93L7MhSmsPDbtLeo-dEzJoX7zvzxuEv0wU";
-
+            "eyJzdWIiOiJpZGVudGl0eV9ub19hY2NvdW50QHRlc3QuY29tIiwidm90IjoiUDAuQ2wuQ20iLCJpYXQiOjE1MTYyMzkwMjJ9." +
+                "eyJzdWIiOiAiaWRlbnRpdHlfbm9fYWNjb3VudEB0ZXN0LmNvbSIsICJ2b3QiOiAiUDAuQ2wuQ20iLCAiaWF0IjogMTUxNjIzOTAyMiwgImd1aWQiOiIwMjNjMzMwNTUzNDM4MWM2Y2MzN2VjNGVkYzdkYTJiMWNmMWM1MGE4NTk2YmViNWRhM2E5YWE1ODVjZmIwNDk3In0=" +
+                ".c1ZwVhXCl93L7MhSmsPDbtLeo-dEzJoX7zvzxuEv0wU";
 
     var createAccountRequest = CreateIdentityRequest.builder().build();
     var response = postRequestWithHeader(

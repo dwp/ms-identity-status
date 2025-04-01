@@ -15,14 +15,22 @@ public class IdentityStatusCalculator {
   }
 
   public static String fromIdentity(Identity identity) {
-    var vot = identity.getVot();
-    if (vot != null) {
-      if (mediumConfidenceVot(vot) && !StringUtils.isEmpty(identity.getNino())) {
-        return VERIFIED;
-      } else {
-        return UNVERIFIED;
-      }
+    final String vot = identity.getVot();
+    if (vot == null) {
+      return identity.getIdvStatus();
     }
-    return identity.getIdvStatus();
+    return fromDataValues(identity.getIdvStatus(), vot, identity.getNino());
   }
+
+  private static String fromDataValues(
+      final String idvStatus, final String vot, final String nino
+  ) {
+    if ((VERIFIED.equals(idvStatus) || idvStatus == null)
+        && (mediumConfidenceVot(vot) && !StringUtils.isEmpty(nino))) {
+      return VERIFIED;
+    } else {
+      return UNVERIFIED;
+    }
+  }
+
 }

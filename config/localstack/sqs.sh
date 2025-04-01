@@ -22,3 +22,8 @@ awslocal sqs create-queue --queue-name claimant_identity_event
 SUBSCRIPTION_ARN=$(awslocal sns subscribe --protocol sqs --topic-arn arn:aws:sns:eu-west-2:000000000000:pip_identity_event_guid --notification-endpoint arn:aws:sqs:eu-west-2:000000000000:claimant_identity_event --query 'SubscriptionArn' --output text)
 awslocal sns set-subscription-attributes --subscription-arn "$SUBSCRIPTION_ARN" --attribute-name FilterPolicy --attribute-value "{\"x-dwp-routing-key\": [ \"pip_identity_outbound_routing\" ] }"
 awslocal sns get-subscription-attributes --subscription-arn "$SUBSCRIPTION_ARN"
+
+awslocal sqs create-queue --queue-name update_coordinator_idv_queue
+SUBSCRIPTION_ARN=$(awslocal sns subscribe --protocol sqs --topic-arn arn:aws:sns:eu-west-2:000000000000:update_coordinator_idv_topic --notification-endpoint arn:aws:sqs:eu-west-2:000000000000:update_coordinator_idv_queue --query 'SubscriptionArn' --output text)
+awslocal sns set-subscription-attributes --subscription-arn "$SUBSCRIPTION_ARN" --attribute-name FilterPolicy --attribute-value "{\"x-dwp-routing-key\": [ \"pip_identity_coordinator_outbound_routing\" ] }"
+awslocal sns get-subscription-attributes --subscription-arn "$SUBSCRIPTION_ARN"

@@ -8,4 +8,4 @@ fileExistenceTests:
 
 
 metadataTest:
-  entrypoint: ["java", "-jar", "/ms-identity-status.jar"]
+  entrypoint: ["java", "-jar", "/ms-identity-status.jar", "\"$@\""]

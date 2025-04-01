@@ -13,10 +13,34 @@ public class UrlBuilderUtil {
   }
 
   public static String identityRegister() {
-    return baseURI + "/v1/identity";
+    return identityRegister(1);
   }
 
-  public static String getLimiterUrl() { return baseURI + "/v1/identity/limiter"; }
+  public static String identityRegisterV2() {
+    return identityRegister(2);
+  }
 
-  public static String updateApplicationIdUrl(String identityId) { return baseURI + "/v1/identity/" + identityId; }
+  private static String identityRegister(final int version) {
+    return baseURI + "/v" + version + "/identity";
+  }
+
+  public static String getLimiterUrl() {
+    return baseURI + "/v1/identity/limiter";
+  }
+
+  public static String updateApplicationIdUrl(String identityId) {
+    return baseURI + "/v1/identity/" + identityId;
+  }
+
+  public static String updateIdentityStatus(String applicationId) {
+    return baseURI + "/v1/identity/agent-idv-uplift/" + applicationId;
+  }
+
+  public static String getIdentityDetailsUrl() { return baseURI + "/v1/identity/nino"; }
+
+  public static String getNinoToGuidUrl() { return baseURI + "/v1/identity/guid"; }
+
+  public static String getGuidToNinoUrl(String guid) {
+    return baseURI + "/v1/identity/" + guid + "/nino";
+  }
 }

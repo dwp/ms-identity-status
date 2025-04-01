@@ -1,8 +1,5 @@
 package uk.gov.dwp.health.pip.identity.api.patch;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static uk.gov.dwp.health.pip.identity.utils.UrlBuilderUtil.updateApplicationIdUrl;
-
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +10,9 @@ import uk.gov.dwp.health.pip.identity.api.ApiTest;
 import uk.gov.dwp.health.pip.identity.config.MongoClientConnection;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.dwp.health.pip.identity.utils.UrlBuilderUtil.updateApplicationIdUrl;
+
 public class UpdateApplicationIdIT extends ApiTest {
 
     private static final String ID = "4bce57c491efc3ac3bc3e6f1";
@@ -21,22 +21,22 @@ public class UpdateApplicationIdIT extends ApiTest {
 
     @BeforeAll
     static void beforeAll() {
-        MongoClientConnection.emptyMongoCollection();
+        MongoClientConnection.emptyMongoIdentityCollection();
         MongoClientConnection.getMongoTemplate()
                 .save(Identity.builder()
                         .id(ID)
                         .build());
     }
-    
+
     @BeforeEach
     void beforeEach(){
         applicationIdDto = new ApplicationIdDto();
         applicationIdDto.setApplicationId(ID);
     }
-    
+
     @Test
     void shouldReturn202StatusCodeForUpdateApplicationId(){
-        
+
         Response response = patchRequest(updateApplicationIdUrl(ID), applicationIdDto);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED.value());
 
@@ -49,9 +49,9 @@ public class UpdateApplicationIdIT extends ApiTest {
     }
 
     @Test
-    public void shouldReturn500StatusCodeWhenTheIdentityIdInvalidFormat() {
+    public void shouldReturn400StatusCodeWhenTheIdentityIdInvalidFormat() {
         int actualResponseCode = patchRequest(updateApplicationIdUrl("invalid-format"), applicationIdDto).statusCode();
-        assertThat(actualResponseCode).isEqualTo(500);
+        assertThat(actualResponseCode).isEqualTo(400);
     }
 
     @Test

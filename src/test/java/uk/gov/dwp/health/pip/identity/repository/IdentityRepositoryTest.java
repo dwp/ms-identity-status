@@ -17,6 +17,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.dwp.health.pip.identity.entity.Identity;
+import uk.gov.dwp.health.pip.identity.model.IdentityRequestUpdateSchemaV1.Vot;
 
 @DataMongoTest
 @ExtendWith(SpringExtension.class)
@@ -42,6 +43,7 @@ class IdentityRepositoryTest {
             .add("idvStatus", "verified")
             .add("identityId", IDENTITY_ID)
             .add("applicationID", APPLICATION_ID)
+            .add("vot", Vot.P_2_CL_CM.value())
             .get();
 
     mongoTemplate.save(objectToSave, "identity");
@@ -59,6 +61,8 @@ class IdentityRepositoryTest {
               assertThat(identity.getIdvStatus()).isEqualTo("verified");
               assertThat(identity.getIdentityId()).isEqualTo(IDENTITY_ID);
               assertThat(identity.getApplicationID()).isEqualTo(APPLICATION_ID);
+              assertThat(identity.getVot()).isEqualTo(Vot.P_2_CL_CM.value());
+              assertThat(identity.getUpliftDetails()).isNull();
               assertThat(identity.getErrorMessage()).isNull();
             });
   }
@@ -75,6 +79,8 @@ class IdentityRepositoryTest {
               assertThat(identity.getIdvStatus()).isEqualTo("verified");
               assertThat(identity.getIdentityId()).isEqualTo(IDENTITY_ID);
               assertThat(identity.getApplicationID()).isEqualTo(APPLICATION_ID);
+              assertThat(identity.getVot()).isEqualTo(Vot.P_2_CL_CM.value());
+              assertThat(identity.getUpliftDetails()).isNull();
               assertThat(identity.getErrorMessage()).isNull();
             });
   }
@@ -91,6 +97,8 @@ class IdentityRepositoryTest {
               assertThat(identity.getIdvStatus()).isEqualTo("verified");
               assertThat(identity.getIdentityId()).isEqualTo(IDENTITY_ID);
               assertThat(identity.getSubjectId()).isEqualTo("positive@dwp.gov.uk");
+              assertThat(identity.getVot()).isEqualTo(Vot.P_2_CL_CM.value());
+              assertThat(identity.getUpliftDetails()).isNull();
               assertThat(identity.getErrorMessage()).isNull();
             });
   }

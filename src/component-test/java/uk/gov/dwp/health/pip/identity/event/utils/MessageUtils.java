@@ -26,7 +26,9 @@ public class MessageUtils {
   private final String requestRoutingKey;
   private final String requestQueueUrl;
   private final String deadLetterQueueUrl;
-  private final String responseQueueUrl;
+  private final String pipCsResponseQueueUrl;
+
+  private final String pipServiceResponseQueueUrl;
 
   public MessageUtils(
       String serviceEndpoint,
@@ -35,7 +37,9 @@ public class MessageUtils {
       String requestRoutingKey,
       String requestQueueUrl,
       String deadLetterQueueUrl,
-      String responseQueueUrl) {
+      String pipCsResponseQueueUrl,
+      String pipServiceResponseQueueUrl
+      ) {
     var endpointConfiguration =
         new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, awsRegion);
 
@@ -49,7 +53,8 @@ public class MessageUtils {
     this.requestRoutingKey = requestRoutingKey;
     this.requestQueueUrl = requestQueueUrl;
     this.deadLetterQueueUrl = deadLetterQueueUrl;
-    this.responseQueueUrl = responseQueueUrl;
+    this.pipCsResponseQueueUrl = pipCsResponseQueueUrl;
+    this.pipServiceResponseQueueUrl = pipServiceResponseQueueUrl;
   }
 
   public void publishMessage(String message) {
@@ -103,8 +108,12 @@ public class MessageUtils {
     return receiveMessageResult.getMessages().get(0);
   }
 
-  public Message getResponseMessage() {
-    return getMessage(responseQueueUrl);
+  public Message getPipCsResponseMessage() {
+    return getMessage(pipCsResponseQueueUrl);
+  }
+
+  public Message getPipServiceResponseMessage() {
+    return getMessage(pipServiceResponseQueueUrl);
   }
 
   public Message getDlqMessage() {
@@ -115,8 +124,15 @@ public class MessageUtils {
     amazonSQS.purgeQueue(new PurgeQueueRequest(queueUrl));
   }
 
-  public void purgeResponseQueue() {
-    purgeQueue(responseQueueUrl);
+  public void purgeRequestQueue() {
+    purgeQueue(requestQueueUrl);
+  }
+
+  public void purgePipCsResponseQueue() {
+    purgeQueue(pipCsResponseQueueUrl);
+  }
+  public void purgePipServiceResponseQueue() {
+    purgeQueue(pipServiceResponseQueueUrl);
   }
 
   public void purgeDeadLetterQueue() {
@@ -134,8 +150,13 @@ public class MessageUtils {
     return queueAttributes.get(QueueAttributeName.ApproximateNumberOfMessages.toString());
   }
 
-  public String getResponseMessageCount() {
-    var queueAttributes = getQueueAttributes(responseQueueUrl);
+  public String getPipCsResponseMessageCount() {
+    var queueAttributes = getQueueAttributes(pipCsResponseQueueUrl);
+    return queueAttributes.get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+  }
+
+  public String getPipServiceResponseMessageCount() {
+    var queueAttributes = getQueueAttributes(pipServiceResponseQueueUrl);
     return queueAttributes.get(QueueAttributeName.ApproximateNumberOfMessages.toString());
   }
 

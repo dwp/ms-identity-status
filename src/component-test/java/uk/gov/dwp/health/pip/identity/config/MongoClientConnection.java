@@ -32,7 +32,7 @@ public class MongoClientConnection {
     return new MongoTemplate(mongoClient, "identity");
   }
 
-  public static void emptyMongoCollection() {
+  public static void emptyMongoIdentityCollection() {
     MongoCollection<Document> mongoCollection = getMongoTemplate().getCollection("identity");
     mongoCollection.drop();
   }

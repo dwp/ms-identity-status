@@ -2,6 +2,8 @@ package uk.gov.dwp.health.pip.identity.messaging;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,15 +20,15 @@ public class PipIdentityGuidEventPublisher {
   private final EventManager eventManager;
   private final PipIdentityGuidEventProperties eventProperties;
 
-  public void publish(TokenPayload tokenPayload, String correlationId) {
-    log.info("Attempting to publish Pip Identity guid event");
+  public void publish(TokenPayload tokenPayload) {
+    log.info("Attempting to publish Pip Identity guid event to guid matcher lambda");
 
     HashMap<String, Object> payload = new HashMap<>();
     payload.put("subject_id", tokenPayload.getSub());
     payload.put("channel", "oidv");
     payload.put("timestamp", DateParseUtil.dateTimeToString(LocalDateTime.now()));
-    payload.put("identity_id", correlationId);
     payload.put("guid", tokenPayload.getGuid());
+    payload.put("identity_id", UUID.randomUUID());
     if (tokenPayload.getVot() == null) {
       log.info("Building token for existing PIP cred user");
       payload.put("idv_outcome", "verified");

@@ -3,10 +3,10 @@ schema_version: 1.0.0
 project:
   - project_id: 42626368
     component_name: ms-identity-status
-    version: 1.8.1
+    version: 1.18.0
     last_verified:
-      date: "2024-05-23"
-      name: "@michael.brownwood"
+      date: "2025-02-19"
+      name: "@nick.preece"
     tags:
       payments: false
       personally_identifying_information: true

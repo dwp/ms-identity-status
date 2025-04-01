@@ -13,4 +13,6 @@ public interface IdentityRepository extends CrudRepository<Identity, String> {
   Optional<Identity> findBySubjectId(String s);
 
   Optional<Identity> findByApplicationID(String s);
+
+  Optional<Identity> findById(String s);
 }

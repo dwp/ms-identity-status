@@ -31,7 +31,7 @@
     - pip install awscli
     - eval $(aws ecr get-login --no-include-email --region eu-west-2 | sed 's|https://||')
     - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
-    - export APP_IMAGE="$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:${CI_COMMIT_SHA:0:8}"
+    - export APP_IMAGE="$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG:$CI_COMMIT_SHA"
     - export MOCK_IMAGE=$(aws ssm get-parameter --name "/artifact/$PRODUCT/$PIP_APPLY_MOCKS_NAME/$PIP_APPLY_MOCKS_BRANCH" --with-decryption --output json | jq --raw-output '.Parameter.Value')
     - echo $DT_API_TOKEN | docker login -u pik94420 --password-stdin https://pik94420.live.dynatrace.com
     - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
@@ -61,9 +61,17 @@ api-tests:
     - docker logout
   variables:
     DOCKER_COMPOSE_FILE: "docker-compose.yml"
-    DOCKER_COMPOSE_COMMAND: "--exit-code-from api-tests"
+    DOCKER_COMPOSE_COMMAND: "--quiet-pull --exit-code-from api-tests api-tests"
+    DOCKER_COMPOSE_POST: 'eval docker-compose logs ms-identity-status > app.log'
     MVN_OPTS: '-Dmaven.repo.local=~/.m2/repository'
     MVN_M2: "~/.m2"
+    COMPOSE_PROFILES: "api-test"
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - app.log
+    when: always
+    expose_as: 'App Log'
   <<: *prepare-test
   <<: *environment
   <<: *docker-build

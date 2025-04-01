@@ -1,12 +1,19 @@
 package uk.gov.dwp.health.pip.identity.event;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import uk.gov.dwp.health.pip.identity.event.utils.HttpUtils;
 import uk.gov.dwp.health.pip.identity.event.utils.MessageUtils;
 
+@Slf4j
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 abstract class BaseApiTest {
 
@@ -26,8 +33,11 @@ abstract class BaseApiTest {
         getEnv("REQUEST_QUEUE_URL", "http://localhost:4566/000000000000/pip_idv_outcome");
     var deadLetterQueueUrl =
         getEnv("DEAD_LETTER_QUEUE_URL", "http://localhost:4566/000000000000/pip_idv_outcome_dlq");
-    var responseQueueUrl =
-        getEnv("RESPONSE_QUEUE_URL", "http://localhost:4566/000000000000/update_pipcs_idv_queue");
+    var pipCsResponseQueueUrl =
+        getEnv("RESPONSE_PIPCS_QUEUE_URL", "http://localhost:4566/000000000000/update_pipcs_idv_queue");
+    var pipServiceResponseQueueUrl =
+        getEnv("RESPONSE_PIPSERVICE_QUEUE_URL", "http://localhost:4566/000000000000/update_coordinator_idv_queue");
+
 
     messageUtils =
         new MessageUtils(
@@ -37,7 +47,8 @@ abstract class BaseApiTest {
             requestRoutingKey,
             requestQueueUrl,
             deadLetterQueueUrl,
-            responseQueueUrl);
+            pipCsResponseQueueUrl,
+            pipServiceResponseQueueUrl);
 
     var wireMockHost = getEnv("WIREMOCK_HOST", "http://localhost:9970");
 
@@ -51,7 +62,35 @@ abstract class BaseApiTest {
 
   @BeforeEach
   void beforeEach() {
-    messageUtils.purgeResponseQueue();
+    messageUtils.purgeRequestQueue();
+    messageUtils.purgePipCsResponseQueue();
+    messageUtils.purgePipServiceResponseQueue();
     messageUtils.purgeDeadLetterQueue();
+    emptyMongoIdentityCollection();
   }
+
+  public static MongoTemplate getMongoTemplate() {
+    final String databaseName = getEnv("SPRING_DATA_MONGODB_DATABASE", "identity");
+    final String connectionString =
+        "mongodb://"
+        + getEnv("MONGODB_HOST", "localhost")
+        + ":"
+        + getEnv("MONGODB_PORT", "27017")
+        + "/"
+        + databaseName;
+    log.info("Connecting to mongo instance with string {}", connectionString);
+    final MongoClientSettings mongoClientSettings =
+        MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(connectionString))
+            .build();
+
+    final MongoClient mongoClient = MongoClients.create(mongoClientSettings);
+
+    return new MongoTemplate(mongoClient, databaseName);
+  }
+
+  public static void emptyMongoIdentityCollection() {
+    getMongoTemplate().getCollection("identity").drop();
+  }
+
 }

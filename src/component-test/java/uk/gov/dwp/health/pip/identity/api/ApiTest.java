@@ -18,7 +18,7 @@ public class ApiTest {
   static RequestSpecification requestSpec;
 
   @BeforeAll
-  public static void setup() {
+  public static void staticSetup() {
     RestAssured.baseURI = getEnv("HOST", "http://localhost");
     RestAssured.port = Integer.parseInt(getEnv("PORT", "8080"));
     RestAssured.defaultParser = Parser.JSON;

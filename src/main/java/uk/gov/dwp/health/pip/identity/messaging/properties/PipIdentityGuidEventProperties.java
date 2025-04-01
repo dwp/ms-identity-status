@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 @Setter
-@ConfigurationProperties("uk.gov.dwp.health.outbound.guid-event")
+@ConfigurationProperties("uk.gov.dwp.health.guid-event.outbound")
 public class PipIdentityGuidEventProperties {
   private String topic;
   private String routingKey;
